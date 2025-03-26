@@ -8,3 +8,5 @@ const SetupLayout = ({ children }: SetupLayoutProps) => {
         </div>
     )
 }
+
+export default SetupLayout;
