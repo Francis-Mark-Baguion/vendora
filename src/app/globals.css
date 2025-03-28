@@ -129,3 +129,26 @@ body, html {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .primary-red-bg {
+    background-color: #DB4444;
+  }
+  .primary-red-text {
+    color: #DB4444;
+  }
+}
+
+.btn-red {
+  background-color: #DB4444;
+  color: white;
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border-radius: 0.25rem; /* rounded */
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+.btn-red:hover {
+  opacity: 0.9; /* Subtle hover effect */
+  text-decoration: underline;
+}

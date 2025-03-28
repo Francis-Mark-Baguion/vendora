@@ -4,35 +4,62 @@ import { ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getCarouselImages, getCategories } from "@/lib/supabaseQueries"; // Adjust the import path as necessary
+import { getCarouselImages, getCategories, getProducts } from "@/lib/supabaseQueries"; 
+import ProductCard from "@/components/ui/product_card"; // Ensure correct import path
+import { Product } from "@/models/Product"; // Import the Product class
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState<string[]>(["/default.jpg"]); // Default placeholder
-  const [categories, setCategories] = useState<{name: string ; link: string }[]> ([]);
+  const [categories, setCategories] = useState<{ name: string; link: string }[]>([]);
+  const [products, setProducts] = useState<Product[]>([]); // Use Product class
 
   async function fetchCategories() {
-    const data = await getCategories(); // Ensure getCategories returns a properly typed array
+    const data = await getCategories();
     if (Array.isArray(data) && data.length > 0) {
-      // Assuming your Supabase table has 'name' and 'slug' fields
-      setCategories(data.map((category) => ({
-        name: category.name,
-        link: `/category/${category.link}`,
-      })));
+      setCategories(
+        data.map((category) => ({
+          name: category.name,
+          link: `/category/${category.link}`,
+        }))
+      );
+    }
+  }
+
+  async function fetchProducts() {
+    const data = await getProducts(); // Fetch products from Supabase
+    if (Array.isArray(data) && data.length > 0) {
+      const productObjects = data.map((prod) => 
+        new Product(
+          prod.id,
+          prod.name,
+          prod.description,
+          prod.price,
+          prod.stock_quantity,
+          prod.category_id,
+          prod.image_url,
+          new Date(prod.created_at),
+          new Date(prod.updated_at),
+          prod.rating,
+          prod.is_featured
+        )
+      );
+      setProducts(productObjects);
     }
   }
 
   useEffect(() => {
-    async function fetchImagesAndCategories() {
+    async function fetchData() {
       const images = await getCarouselImages();
       if (Array.isArray(images) && images.length > 0) {
         setSlides(images.map((img) => img.url));
       }
 
-      await fetchCategories(); // Call the renamed function to fetch categories
+      await fetchCategories();
+      await fetchProducts(); // Fetch products along with categories
     }
 
-    fetchImagesAndCategories();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -42,11 +69,11 @@ export default function Home() {
       }, 4000);
       return () => clearInterval(timer);
     }
-  }, [slides]); // Only run when slides change
+  }, [slides]);
 
   return (
     <div>
-        <div className="flex flex-col justify-between px-6 md:px-12 lg:px-16 py-4 lg:flex-row">
+      <div className="flex flex-col justify-between px-6 md:px-12 lg:px-16 py-4 lg:flex-row">
         {/* Categories Section */}
         <div className="bg-white shadow-md p-4 w-full lg:w-1/4 gap-3 flex flex-col">
           {categories.map((category, index) => (
@@ -63,19 +90,18 @@ export default function Home() {
 
         {/* Image Carousel Section */}
         <div className="relative w-full lg:w-3/4">
-          {/* FIXED: Set a fixed width and height for the image container */}
           <div className="relative w-full max-w-[1400px] h-[300px] md:h-[400px] lg:h-[500px] mx-auto overflow-hidden">
             {slides.length > 0 && (
               <Image
                 src={slides[currentSlide] || "/default.jpg"}
                 alt="Carousel Image"
-                width={1300} // Increased to match new max width
+                width={1300}
                 height={500}
-                className="w-full h-full object-cover" // Ensures images fit properly
+                className="w-full h-full object-cover"
               />
             )}
 
-            {/* Navigation Dots - Stay at the bottom of the image */}
+            {/* Navigation Dots */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
               {slides.map((_, index) => (
                 <button
@@ -90,24 +116,34 @@ export default function Home() {
           </div>
         </div>
       </div>
+
       {/* Best Selling Products Section */}
-<div className="w-full mt-8 px-6 md:px-12 lg:px-16">
-  <div className="flex justify-between items-center mb-4">
-    <div className="flex flex-row">
-      <div className="w-8 h-12 bg-red-600 mb-2 mr-3"></div>
-      <h2 className="text-2xl font-bold text-red-600">This Month</h2>
-    </div>
-    <button className="text-red-600 hover:underline flex items-center">
-      View All
-      <ChevronRight size={18} className="ml-1" />
-    </button>
-  </div>
-  
-  <div className="mb-6">
-    <h3 className="text-4xl font-semibold">Best Selling Products</h3>
-    {/* You can add your product cards/grid here later */}
-  </div>
-</div>
+      <div className="w-full mt-8 px-6 md:px-12 lg:px-16">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-row">
+            <div className="w-8 h-12 primary-red-bg mb-2 mr-3"></div>
+            <h2 className="text-2xl font-bold primary-red-text">This Month</h2>
+          </div>
+          <button className="btn-red">
+            View All
+            <ChevronRight size={18} className="ml-1" />
+          </button>
+        </div>
+
+        <div className="mb-6 items-center">
+          <h3 className="text-4xl font-semibold">Best Selling Products</h3>
+
+          {/* Product List Grid */}
+          <div className="flex flex-wrap justify-center md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+            {products.length > 0 ? (
+              products.map((product) => <ProductCard key={product.id} product={product} />)
+            ) : (
+              <p className="text-gray-500">No products available.</p>
+            )}
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 }

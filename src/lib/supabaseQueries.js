@@ -34,3 +34,18 @@ export async function getCategories() {
     console.log("Fetched categories:", data);
     return data; // Returns an array of category objects
   }
+
+  export async function getProducts() {
+    let { data, error } = await supabase
+        .from("product")
+        .select("id, name, description, price, stock_quantity, category_id, image_url, created_at, updated_at, rating, is_featured"); // Fetch only necessary columns
+
+    if (error) {
+        console.error("Error fetching products:", error);
+        return []; // Return an empty array if an error occurs
+    }
+
+    console.log("Fetched products:", data);
+    return data; // Returns an array of product objects
+}
+
