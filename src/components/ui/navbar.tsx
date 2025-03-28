@@ -45,7 +45,7 @@ const Navbar = () => {
 
         {/* Signed In State - Show User Avatar */}
         <SignedIn>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </SignedIn>
 
         {/* Mobile Menu Button */}
@@ -78,7 +78,7 @@ const Navbar = () => {
           </SignedOut>
 
           <SignedIn>
-            <UserButton afterSignOutUrl="/" />
+          <UserButton />
           </SignedIn>
         </div>
       )}
