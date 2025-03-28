@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Heart, ShoppingCart, Menu } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -27,10 +28,25 @@ const Navbar = () => {
         <Search className="absolute right-3 text-gray-500 w-5 h-5" />
       </div>
 
-      {/* Icons */}
+      {/* Icons & Auth Buttons */}
       <div className="flex items-center space-x-4">
         <Heart className="w-6 h-6 text-gray-700 cursor-pointer" />
         <ShoppingCart className="w-6 h-6 text-gray-700 cursor-pointer" />
+
+        {/* Signed Out State - Show Login/Signup */}
+        <SignedOut>
+          <SignInButton>
+            <Button variant="outline" size="sm">Log in</Button>
+          </SignInButton>
+          <SignUpButton>
+            <Button size="sm">Sign up</Button>
+          </SignUpButton>
+        </SignedOut>
+
+        {/* Signed In State - Show User Avatar */}
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
 
         {/* Mobile Menu Button */}
         <Button 
@@ -50,6 +66,20 @@ const Navbar = () => {
           <Link href="/contact" className="font-medium hover:underline">Contact</Link>
           <Link href="/about" className="font-medium hover:underline">About</Link>
           <Input type="text" placeholder="Search..." className="w-full mt-2" />
+
+          {/* Auth Buttons in Mobile Menu */}
+          <SignedOut>
+            <SignInButton>
+              <Button variant="outline" size="sm" className="w-full">Log in</Button>
+            </SignInButton>
+            <SignUpButton>
+              <Button size="sm" className="w-full">Sign up</Button>
+            </SignUpButton>
+          </SignedOut>
+
+          <SignedIn>
+          <UserButton />
+          </SignedIn>
         </div>
       )}
     </header>
