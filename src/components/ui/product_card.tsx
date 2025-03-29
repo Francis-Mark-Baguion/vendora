@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Heart, Eye } from "lucide-react";
 import { Product } from "@/models/Product";
+import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import Currency Context
 
 const ProductCard = ({ product }: { product: Product }) => {
   const [liked, setLiked] = useState(false);
+  const { currency, exchangeRate } = useContext(CurrencyContext); // ✅ Use CurrencyContext
+
+  // Convert price based on selected currency
+  const convertedPrice = (product.price * exchangeRate).toFixed(2);
 
   return (
     <div className="border rounded-lg p-4 shadow-md bg-white w-64">
@@ -28,14 +33,16 @@ const ProductCard = ({ product }: { product: Product }) => {
       <p className="text-sm text-gray-500">{product.getShortDescription(60)}</p>
 
       <div className="flex items-center space-x-2 mt-1">
-        <span className="text-red-500 font-bold">{product.getFormattedPrice()}</span>
+        <span className="text-red-500 font-bold">
+          {currency} {convertedPrice} {/* ✅ Display updated price */}
+        </span>
       </div>
 
       <div className="flex items-center mt-1">
         {Array.from({ length: 5 }, (_, i) => (
           <span key={i} className={i < Math.round(product.rating) ? "text-yellow-500" : "text-gray-300"}>★</span>
         ))}
-        <span className="text-gray-500 text-sm ml-1">(4.5)</span>
+        <span className="text-gray-500 text-sm ml-1">({product.rating.toFixed(1)})</span>
       </div>
 
       {product.isInStock() ? (

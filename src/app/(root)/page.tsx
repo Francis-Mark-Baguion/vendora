@@ -1,18 +1,21 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { getCarouselImages, getCategories, getProducts } from "@/lib/supabaseQueries"; 
-import ProductCard from "@/components/ui/product_card"; // Ensure correct import path
-import { Product } from "@/models/Product"; // Import the Product class
+import ProductCard from "@/components/ui/product_card";
+import { Product } from "@/models/Product";
+import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import the Currency Context
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<string[]>(["/default.jpg"]); // Default placeholder
+  const [slides, setSlides] = useState<string[]>(["/default.jpg"]);
   const [categories, setCategories] = useState<{ name: string; link: string }[]>([]);
-  const [products, setProducts] = useState<Product[]>([]); // Use Product class
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const { currency, exchangeRate } = useContext(CurrencyContext); // ✅ Use global currency
 
   async function fetchCategories() {
     const data = await getCategories();
@@ -27,14 +30,14 @@ export default function Home() {
   }
 
   async function fetchProducts() {
-    const data = await getProducts(); // Fetch products from Supabase
+    const data = await getProducts();
     if (Array.isArray(data) && data.length > 0) {
       const productObjects = data.map((prod) => 
         new Product(
           prod.id,
           prod.name,
           prod.description,
-          prod.price,
+          prod.price * exchangeRate, // ✅ Convert price based on exchange rate
           prod.stock_quantity,
           prod.category_id,
           prod.image_url,
@@ -56,11 +59,11 @@ export default function Home() {
       }
 
       await fetchCategories();
-      await fetchProducts(); // Fetch products along with categories
+      await fetchProducts();
     }
 
     fetchData();
-  }, []);
+  }, [exchangeRate]); // ✅ Refetch products when exchange rate changes
 
   useEffect(() => {
     if (slides.length > 1) {
@@ -134,7 +137,7 @@ export default function Home() {
           <h3 className="text-4xl font-semibold">Best Selling Products</h3>
 
           {/* Product List Grid */}
-          <div className="flex flex-wrap justify-center md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
+          <div className="flex flex-wrap justify-center md:grid md:grid-cols-2 lg:grid-cols-6 gap-6 mt-4">
             {products.length > 0 ? (
               products.map((product) => <ProductCard key={product.id} product={product} />)
             ) : (
