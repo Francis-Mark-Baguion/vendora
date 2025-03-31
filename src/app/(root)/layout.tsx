@@ -8,9 +8,9 @@ interface SetupLayoutProps {
 const SetupLayout = ({ children }: SetupLayoutProps) => {
   return (
     <div className="m-0 p-0">
-      <Navbar /> {/* Navbar is added here */}
+      
       <main className="mt-16">{children}</main> {/* Push content below fixed navbar */}
-      <Footer /> {/* Footer is added here */}
+      
     </div>
   );
 };

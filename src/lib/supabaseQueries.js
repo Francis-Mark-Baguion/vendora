@@ -49,3 +49,20 @@ export async function getCategories() {
     return data; // Returns an array of product objects
 }
 
+export async function getProductById(productId) {
+  let { data, error } = await supabase
+      .from("product")
+      .select("id, name, description, price, stock_quantity, category_id, image_url, created_at, updated_at, rating, is_featured")
+      .eq("id", productId) // Filter by product ID
+      .single(); // Fetch a single row
+
+  if (error) {
+      console.error(`Error fetching product with ID ${productId}:`, error);
+      return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched product:", data);
+  return data; // Return the product object
+}
+
+

@@ -2,7 +2,9 @@ import { type Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "@/components/ClientProvider"; 
-import { CurrencyProvider } from "@/context/CurrencyContext"; // ✅ Import CurrencyProvider
+import { CurrencyProvider } from "@/context/CurrencyContext";
+import Navbar from "@/components/ui/navbar"; // ✅ Import Navbar
+import Footer from "@/components/ui/footer"; // ✅ Import Footer
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,14 +27,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <CurrencyProvider> {/* ✅ Wrap everything inside CurrencyProvider */}
-      <ClientProvider> {/* ✅ Wrap ClientProvider inside CurrencyProvider */}
+    <CurrencyProvider>
+      <ClientProvider>
         <html lang="en">
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-            <header className="flex justify-end items-center p-4 gap-4 h-16">
-              {/* Add auth buttons or UserButton here */}
-            </header>
-            {children}
+            {/* ✅ Add Navbar Here */}
+            <Navbar />
+
+            {/* ✅ Wrap children inside a main container */}
+            <main className="min-h-screen flex flex-col">{children}</main>
+
+            {/* ✅ Add Footer Here */}
+            <Footer />
           </body>
         </html>
       </ClientProvider>
