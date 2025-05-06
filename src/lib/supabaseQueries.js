@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
+import { create } from "domain";
 
 const DEFAULT_IMAGE = "/default.jpg"; // Path to your default image in `public/` folder
 
@@ -67,6 +68,49 @@ export async function createNewAddress(
 
   console.log("Created new address:", data);
   return data;
+}
+
+export async function addCartProduct(cartItem) {
+  const { data, error } = await supabase
+    .from("cart")
+    .insert([
+      {
+        customer_id: cartItem.customer_id,
+        product_id: cartItem.product_id,
+        quantity: cartItem.quantity,
+        selected_color: cartItem.selected_color,
+        selected_size: cartItem.selected_size,
+        price_at_addition: cartItem.price_at_addition,
+        created_at: new Date().toISOString(), // Set created_at to current date and time
+        updated_at: new Date().toISOString(), // Set updated_at to current date and time
+      },
+    ])
+    .select("*")
+    .single(); // return the inserted row as a single object
+
+  if (error) {
+    console.error("Error adding product to cart:", error.message);
+    return null;
+  }
+
+  console.log("Added product to cart:", data);
+  return data;
+}
+
+export async function getCustomerByEmail(email) {
+  let { data, error } = await supabase
+    .from("customer")
+    .select("*")
+    .eq("email", email)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching customer:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched customer:", data);
+  return data; // Return the customer object
 }
 
 export async function createNewCustomer(

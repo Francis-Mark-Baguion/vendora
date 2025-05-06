@@ -2,11 +2,17 @@
 
 import { useEffect, useState, useContext } from "react";
 import { useParams } from "next/navigation";
-import { getProductById } from "@/lib/supabaseQueries";
+import { useUser } from "@clerk/nextjs";
+import {
+  getProductById,
+  getCustomerByEmail,
+  addCartProduct,
+} from "@/lib/supabaseQueries";
 import { Product } from "@/models/Product";
 import { CurrencyContext } from "@/context/CurrencyContext";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 const ProductPage = () => {
   const { id } = useParams();
@@ -17,6 +23,7 @@ const ProductPage = () => {
   const [selectedSize, setSelectedSize] = useState("M");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const { user } = useUser();
 
   const { currency, exchangeRate } = useContext(CurrencyContext);
   const colorHexMap: { [key: string]: string } = {
@@ -87,16 +94,75 @@ const ProductPage = () => {
 
     setIsAddingToCart(true);
     try {
+      const productData = await getProductById(id as string);
+      console.log("Product Data:", productData);
       // Simulate API call to add to cart
       await new Promise((resolve) => setTimeout(resolve, 1000));
+      const userData = await getCustomerByEmail(
+        user?.emailAddresses[0].emailAddress || ""
+      );
+      if (!userData) {
+        toast.error("User not found");
+        return;
+      }
+
+      const cartItem = {
+        customer_id: userData.id,
+        product_id: productData!.id,
+        quantity: quantity,
+        selected_color: selectedColor,
+        selected_size: selectedSize,
+        price_at_addition: product.price, // Store price at time of addition
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const result = await addCartProduct(cartItem);
+      if (!result) {
+        toast.error("Failed to add item to cart");
+        return;
+      }
 
       // In a real app, you would call your addToCart API here
       // await addToCart(product.id, quantity, selectedSize, selectedColor);
 
-      toast.success(`${quantity} ${product.name} added to cart!`, {
-        position: "bottom-right",
-        icon: "🛒",
-      });
+      toast.success(
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 text-xl">🛒</div>
+          <div>
+            <p className="font-medium text-gray-900">Added to Cart</p>
+            <p className="text-sm text-gray-600">
+              {quantity} × {product.name}
+            </p>
+            <button
+              onClick={() => {
+                const router = useRouter();
+                router.push("/cart");
+              }}
+              className="mt-2 text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+            >
+              View Cart →
+            </button>
+          </div>
+        </div>,
+        {
+          position: "bottom-right",
+          duration: 4000,
+          style: {
+            borderLeft: "4px solid #10B981", // Green accent border
+            backgroundColor: "#FFFFFF",
+            color: "#1F2937",
+            padding: "16px",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+            maxWidth: "380px",
+          },
+          iconTheme: {
+            primary: "#10B981", // Green checkmark
+            secondary: "#FFFFFF",
+          },
+        }
+      );
     } catch (error) {
       toast.error("Failed to add item to cart");
     } finally {
