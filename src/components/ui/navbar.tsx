@@ -15,10 +15,12 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Image from "next/image";
+import { useUser } from "@clerk/nextjs";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useUser();
   const { currency, setCurrency } = useContext(CurrencyContext);
 
   return (
@@ -168,20 +170,38 @@ const Navbar = () => {
             </div>
           </SignedOut>
           <SignedIn>
-            <div className="flex justify-center">
-              <UserButton afterSignOutUrl="/" />
+            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+              <div className="relative">
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-9 w-9", // Slightly smaller avatar
+                      userButtonPopoverCard: "shadow-lg rounded-lg", // Better popover styling
+                    },
+                  }}
+                />
+              </div>
+              <div className="block">
+                <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                  {user?.firstName || "User"}
+                </p>
+                <p className="text-xs text-gray-500 line-clamp-1">
+                  {user?.emailAddresses.at(0)?.emailAddress}
+                </p>
+              </div>
             </div>
           </SignedIn>
           <div className="pt-2">
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="w-full border-gray-300 rounded-md"
+              className="w-full border border-gray-300 rounded-md p-2"
             >
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-              <option value="PHP">PHP</option>
+              <option value="USD">$ USD&nbsp;</option>
+              <option value="EUR">€ EUR&nbsp;</option>
+              <option value="GBP">£ GBP&nbsp;</option>
+              <option value="PHP">₱ PHP&nbsp;</option>
             </select>
           </div>
         </div>
