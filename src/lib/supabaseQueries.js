@@ -27,6 +27,32 @@ export async function getCarouselImages() {
   return images;
 }
 
+export async function getCartItems(customerId) {
+  const { data, error } = await supabase
+    .from("cart")
+    .select(
+      `
+            id,
+            product_id,
+            quantity,
+            selected_color,
+            selected_size,
+            price_at_addition,
+            product:product_id (
+              id,
+              name,
+              description,
+              price,
+              image_url
+            )
+          `
+    )
+    .eq("customer_id", customerId);
+
+  if (error) throw error; // Fetch cart items for the given customer ID
+  return data; // Returns an array of cart items
+}
+
 export async function getCategories() {
   let { data, error } = await supabase.from("category").select("*");
 
