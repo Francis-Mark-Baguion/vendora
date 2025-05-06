@@ -1,21 +1,52 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { getCarouselImages, getCategories, getProducts } from "@/lib/supabaseQueries"; 
+import { useUser, useClerk } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { customerExist } from "@/lib/supabaseQueries";
+import {
+  getCarouselImages,
+  getCategories,
+  getProducts,
+} from "@/lib/supabaseQueries";
 import ProductCard from "@/components/ui/product_card";
 import { Product } from "@/models/Product";
-import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import the Currency Context
+import { CurrencyContext } from "@/context/CurrencyContext";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState<string[]>(["/default.jpg"]);
-  const [categories, setCategories] = useState<{ name: string; link: string }[]>([]);
+  const [categories, setCategories] = useState<
+    { name: string; link: string }[]
+  >([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const { isLoaded, user } = useUser();
+  const { redirectToSignIn } = useClerk();
+  const router = useRouter();
+  const { currency, exchangeRate } = useContext(CurrencyContext);
 
-  const { currency, exchangeRate } = useContext(CurrencyContext); // ✅ Use global currency
+  async function checkAndRedirect() {
+    if (!isLoaded) return;
+
+    if (!user) {
+      redirectToSignIn();
+      return;
+    }
+
+    try {
+      const exists = await customerExist(
+        user.primaryEmailAddress?.emailAddress || ""
+      );
+      if (!exists) {
+        router.push("/info");
+      }
+    } catch (error) {
+      console.error("Error checking customer:", error);
+    }
+  }
 
   async function fetchCategories() {
     const data = await getCategories();
@@ -32,38 +63,40 @@ export default function Home() {
   async function fetchProducts() {
     const data = await getProducts();
     if (Array.isArray(data) && data.length > 0) {
-      const productObjects = data.map((prod) => 
-        new Product(
-          prod.id,
-          prod.name,
-          prod.description,
-          prod.price * exchangeRate, // ✅ Convert price based on exchange rate
-          prod.stock_quantity,
-          prod.category_id,
-          prod.image_url,
-          new Date(prod.created_at),
-          new Date(prod.updated_at),
-          prod.rating,
-          prod.is_featured
-        )
+      const productObjects = data.map(
+        (prod) =>
+          new Product(
+            prod.id,
+            prod.name,
+            prod.description,
+            prod.price * exchangeRate,
+            prod.stock_quantity,
+            prod.category_id,
+            prod.image_url,
+            new Date(prod.created_at),
+            new Date(prod.updated_at),
+            prod.rating,
+            prod.is_featured
+          )
       );
       setProducts(productObjects);
     }
   }
 
   useEffect(() => {
+    checkAndRedirect();
+
     async function fetchData() {
       const images = await getCarouselImages();
       if (Array.isArray(images) && images.length > 0) {
         setSlides(images.map((img) => img.url));
       }
-
       await fetchCategories();
       await fetchProducts();
     }
 
     fetchData();
-  }, [exchangeRate]); // ✅ Refetch products when exchange rate changes
+  }, [isLoaded, user, exchangeRate]);
 
   useEffect(() => {
     if (slides.length > 1) {
@@ -74,47 +107,105 @@ export default function Home() {
     }
   }, [slides]);
 
+  if (!isLoaded) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div>
-      <div className="flex flex-col justify-between px-6 md:px-12 lg:px-16 py-4 lg:flex-row">
-        {/* Categories Section */}
-        <div className="bg-white shadow-md p-4 w-full lg:w-1/4 gap-3 flex flex-col">
-          {categories.map((category, index) => (
-            <Link
-              key={index}
-              href={category.link}
-              className="flex justify-between items-center py-2 text-gray-700 hover:text-black hover:font-medium transition"
-            >
-              {category.name}
-              <ChevronRight size={18} />
-            </Link>
-          ))}
-        </div>
+    <div className=" max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+          {/* Categories Section - Modern Sidebar */}
+          <div className="lg:sticky lg:top-6 lg:h-full lg:overflow-y-auto w-full lg:w-72 flex-shrink-0">
+            <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-5 h-full">
+              <h3 className="text-xl font-bold text-gray-900 mb-5 flex items-center">
+                <svg
+                  className="w-5 h-5 mr-2 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+                Shop Categories
+              </h3>
+              <div className="space-y-1.5">
+                {categories.map((category, index) => (
+                  <Link
+                    key={index}
+                    href={category.link}
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-red-50 transition-colors duration-200 group"
+                  >
+                    <span className="text-gray-700 group-hover:text-red-600 font-medium transition-colors">
+                      {category.name}
+                    </span>
+                    <ChevronRight
+                      size={16}
+                      className="text-gray-400 group-hover:text-red-500 transition-colors"
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
 
-        {/* Image Carousel Section */}
-        <div className="relative w-full lg:w-3/4">
-          <div className="relative w-full max-w-[1400px] h-[300px] md:h-[400px] lg:h-[500px] mx-auto overflow-hidden">
-            {slides.length > 0 && (
-              <Image
-                src={slides[currentSlide] || "/default.jpg"}
-                alt="Carousel Image"
-                width={1300}
-                height={500}
-                className="w-full h-full object-cover"
-              />
-            )}
-
-            {/* Navigation Dots */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    currentSlide === index ? "bg-red-500 scale-110" : "bg-gray-400"
-                  }`}
-                  onClick={() => setCurrentSlide(index)}
+          {/* Carousel Section - Hero Area */}
+          <div className="flex-1">
+            <div className="relative w-full aspect-[16/7] rounded-xl overflow-hidden shadow-xs">
+              {slides.length > 0 && (
+                <Image
+                  src={slides[currentSlide] || "/default.jpg"}
+                  alt="Carousel Image"
+                  fill
+                  className="object-cover transition-opacity duration-300"
+                  priority
                 />
-              ))}
+              )}
+
+              {/* Navigation Controls */}
+              {slides.length > 1 && (
+                <>
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
+                    {slides.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentSlide(index)}
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${
+                          currentSlide === index
+                            ? "bg-white scale-125 shadow-xs"
+                            : "bg-white/50 hover:bg-white/80"
+                        }`}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() =>
+                      setCurrentSlide(
+                        currentSlide - 1 < 0 ? 0 : currentSlide - 1
+                      )
+                    }
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-xs backdrop-blur-sm transition-all"
+                    aria-label="Previous slide"
+                  >
+                    <ChevronLeft size={20} className="text-gray-700" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      setCurrentSlide((currentSlide + 1) % slides.length)
+                    }
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-xs backdrop-blur-sm transition-all"
+                    aria-label="Next slide"
+                  >
+                    <ChevronRight size={20} className="text-gray-700" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -122,29 +213,57 @@ export default function Home() {
 
       {/* Best Selling Products Section */}
       <div className="w-full mt-8 px-6 md:px-12 lg:px-16">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex flex-row">
-            <div className="w-8 h-12 primary-red-bg mb-2 mr-3"></div>
-            <h2 className="text-2xl font-bold primary-red-text">This Month</h2>
+        <div className="mb-12">
+          {/* Section Header */}
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <div className="flex items-center mb-2">
+                <div className="w-3 h-8 bg-red-600 rounded-full mr-3"></div>
+                <span className="text-sm font-medium text-red-600 uppercase tracking-wider">
+                  Trending Now
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Best Selling Products
+              </h2>
+            </div>
+            <Link
+              href="/products"
+              className="flex items-center text-gray-600 hover:text-red-600 transition-colors group"
+            >
+              <span className="font-medium">View All</span>
+              <ChevronRight
+                size={18}
+                className="ml-1 transition-transform group-hover:translate-x-1"
+              />
+            </Link>
           </div>
-          <button className="btn-red">
-            View All
-            <ChevronRight size={18} className="ml-1" />
-          </button>
-        </div>
 
-        <div className="mb-6 items-center">
-          <h3 className="text-4xl font-semibold">Best Selling Products</h3>
-
-          {/* Product List Grid */}
-          <div className="flex flex-wrap justify-center md:grid md:grid-cols-2 lg:grid-cols-6 gap-6 mt-4">
-            {products.length > 0 ? (
-              products.map((product) => <ProductCard key={product.id} product={product} />)
-            ) : (
-              <p className="text-gray-500">No products available.</p>
-            )}
+          {/* Product Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  gap-4 md:gap-6">
+            {products.length > 0
+              ? products.map((product) => (
+                  <div className="hover:shadow-lg transition-shadow duration-200">
+                    <ProductCard key={product.id} product={product} />
+                  </div>
+                ))
+              : // Skeleton Loaders
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl overflow-hidden border border-gray-100 animate-pulse"
+                  >
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-gray-100 rounded-full w-3/4"></div>
+                      <div className="h-3 bg-gray-100 rounded-full w-full"></div>
+                      <div className="h-3 bg-gray-100 rounded-full w-2/3"></div>
+                      <div className="pt-4">
+                        <div className="h-5 bg-gray-200 rounded-full w-1/2"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
           </div>
-
         </div>
       </div>
     </div>

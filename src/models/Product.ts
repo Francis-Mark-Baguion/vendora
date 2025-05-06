@@ -10,7 +10,9 @@ export class Product {
     public created_at: Date,
     public updated_at: Date,
     public rating: number,
-    public is_featured: boolean
+    public is_featured: boolean,
+    public available_colors: string[] = [], // New property for available colors
+    public available_sizes: string[] = [] // New property for available sizes
   ) {}
 
   // Method to check if the product is in stock
@@ -27,7 +29,7 @@ export class Product {
 
   // Method to format price (e.g., $19.99)
   getFormattedPrice(currency: string = "$"): string {
-    return `${currency}${this.price.toFixed(2)}`;
+    return `${currency} ${Number(this.price.toFixed(2)).toLocaleString()}`;
   }
 
   // ✅ Method to get the first image from the array

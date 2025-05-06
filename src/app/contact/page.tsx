@@ -27,9 +27,11 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6 mt-16">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-4xl w-full">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Us</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Contact Us
+        </h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-gray-50 p-6 rounded-lg shadow-sm">
             <h3 className="text-lg font-medium mb-2 flex items-center">
@@ -38,7 +40,9 @@ export default function ContactPage() {
             <p>We are available 24/7, 7 days a week.</p>
             <p className="font-semibold mt-2">Phone: +880611112222</p>
             <hr className="my-4" />
-            <h3 className="text-lg font-medium mb-2 flex items-center">✉️ Write to Us</h3>
+            <h3 className="text-lg font-medium mb-2 flex items-center">
+              ✉️ Write to Us
+            </h3>
             <p>Fill out our form and we will contact you within 24 hours.</p>
             <p className="mt-2 font-semibold">customer@exclusive.com</p>
             <p className="font-semibold">support@exclusive.com</p>

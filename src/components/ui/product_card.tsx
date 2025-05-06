@@ -7,18 +7,22 @@ import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import Curre
 const ProductCard = ({ product }: { product: Product }) => {
   const [liked, setLiked] = useState(false);
   const { currency, exchangeRate } = useContext(CurrencyContext); // ✅ Use CurrencyContext
-
-  // Convert price based on selected currency
-  const convertedPrice = (product.price * exchangeRate).toFixed(2);
+  
+  const convertedPrice = product.price.toFixed(2);
 
   // Select the first image from the JSON array
-  const productImage = Array.isArray(product.image_url) ? product.image_url[0] : product.image_url;
+  const productImage = Array.isArray(product.image_url)
+    ? product.image_url[0]
+    : product.image_url;
 
   return (
     <Link href={`/product/${product.id}`} className="block">
-      <div className="border rounded-lg shadow-md bg-white w-64 h-96 p-4 cursor-pointer flex flex-col 
-        transition-transform duration-300 ease-in-out hover:scale-105"> {/* ✅ Added hover effect */}
-        
+      <div
+        className="border rounded-lg shadow-md bg-white w-64 h-96 p-4 cursor-pointer flex flex-col 
+        transition-transform duration-300 ease-in-out hover:scale-105"
+      >
+        {" "}
+        {/* ✅ Added hover effect */}
         {/* Image Container */}
         <div className="relative h-40">
           <img
@@ -26,25 +30,7 @@ const ProductCard = ({ product }: { product: Product }) => {
             alt={product.name}
             className="w-full h-full object-cover rounded-md"
           />
-          {/* Like Button */}
-          <button
-            className="absolute top-2 right-2 bg-white p-1 rounded-full shadow"
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent link redirection
-              setLiked(!liked);
-            }}
-          >
-            <Heart className={liked ? "text-red-500" : "text-gray-400"} />
-          </button>
-          {/* Preview Button */}
-          <button
-            className="absolute top-10 right-2 bg-white p-1 rounded-full shadow"
-            onClick={(e) => e.stopPropagation()} // Prevent redirect
-          >
-            <Eye className="text-gray-400" />
-          </button>
         </div>
-
         {/* Product Details */}
         <div className="flex-grow flex flex-col justify-between mt-2">
           <div>
@@ -57,13 +43,23 @@ const ProductCard = ({ product }: { product: Product }) => {
           {/* Price & Stock */}
           <div>
             <div className="text-red-500 font-bold text-lg">
-              {currency} {convertedPrice} {/* ✅ Display updated price */}
+              {currency} {Number(convertedPrice).toLocaleString()}
+              {/* ✅ Display updated price */}
             </div>
 
             {/* Rating */}
             <div className="flex items-center mt-1">
               {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} className={i < Math.round(product.rating) ? "text-yellow-500" : "text-gray-300"}>★</span>
+                <span
+                  key={i}
+                  className={
+                    i < Math.round(product.rating)
+                      ? "text-yellow-500"
+                      : "text-gray-300"
+                  }
+                >
+                  ★
+                </span>
               ))}
               <span className="text-gray-500 text-sm ml-1">
                 ({product.rating.toFixed(1)})
@@ -72,9 +68,13 @@ const ProductCard = ({ product }: { product: Product }) => {
 
             {/* Stock Indicator */}
             {product.isInStock() ? (
-              <span className="text-green-500 text-sm font-medium">In Stock</span>
+              <span className="text-green-500 text-sm font-medium">
+                In Stock
+              </span>
             ) : (
-              <span className="text-red-500 text-sm font-medium">Out of Stock</span>
+              <span className="text-red-500 text-sm font-medium">
+                Out of Stock
+              </span>
             )}
           </div>
         </div>

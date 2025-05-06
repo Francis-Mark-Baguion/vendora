@@ -1,100 +1,189 @@
-'use client';
+"use client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Heart, ShoppingCart, Menu } from "lucide-react";
+import { Search, ShoppingCart, Menu, ChevronDown } from "lucide-react";
 import { useState, useContext } from "react";
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import "flag-icons/css/flag-icons.min.css";
+
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 import Image from "next/image";
-import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import the Currency Context
+import { CurrencyContext } from "@/context/CurrencyContext";
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { currency, setCurrency } = useContext(CurrencyContext); // ✅ Use the global currency context
+  const { currency, setCurrency } = useContext(CurrencyContext);
 
   return (
-    <header className="w-full bg-white shadow-md flex items-center justify-between px-4 sm:px-6 md:px-8 py-4 border-b fixed top-0 left-0 z-50">
-      {/* Logo */}
-      <Image src="/Vendora.png" alt="Vendora Logo" width={150} height={50} className="ml-4 sm:ml-10 md:ml-15 lg:ml-30" />
+    <header className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo + Mobile Menu Button */}
+          <div className="flex items-center">
+            {/* <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button> */}
 
-      {/* Desktop Navigation */}
-      <nav className="hidden md:flex space-x-6 text-gray-700">
-        <Link href="/" className="font-medium hover:underline">Home</Link>
-        <Link href="/contact" className="font-medium hover:underline">Contact</Link>
-        <Link href="/about" className="font-medium hover:underline">About</Link>
-      </nav>
+            <Link href="/" className="flex-shrink-0">
+              <Image
+                src="/Vendora.png"
+                alt="Vendora Logo"
+                width={120}
+                height={40}
+                priority
+              />
+            </Link>
+          </div>
 
-      {/* Search Bar & Currency Dropdown */}
-      <div className="hidden md:flex items-center space-x-4">
-        <div className="relative">
-          <Input type="text" placeholder="What are you looking for?" className="w-40 sm:w-64 pr-10" />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+          {/* Search Bar - Centered and Expanded */}
+          <div className="flex-1 max-w-2xl mx-4 hidden md:block">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Search for products, brands, and more..."
+                className="w-full pl-4 pr-10 py-2 rounded-lg border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+              <Button
+                variant="default"
+                size="icon"
+                className="absolute right-0 top-0 h-full rounded-l-none"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-4">
+            {/*  Currency Selector */}
+            <div className="hidden md:block space-x-2">
+              <div className="relative">
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="appearance-none bg-transparent pl-8 pr-4 py-1 text-sm font-medium border border-gray-200 rounded-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+                >
+                  <option value="USD">$ USD&nbsp;</option>
+                  <option value="EUR">€ EUR&nbsp;</option>
+                  <option value="GBP">£ GBP&nbsp;</option>
+                  <option value="PHP">₱ PHP&nbsp;</option>
+                </select>
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-sm">
+                  {currency === "USD" && <span title="United States">🇺🇸</span>}
+                  {currency === "EUR" && <span title="European Union">🇪🇺</span>}
+                  {currency === "GBP" && <span title="United Kingdom">🇬🇧</span>}
+                  {currency === "PHP" && <span title="Philippines">🇵🇭</span>}
+                </div>
+                <ChevronDown className="absolute ml-4 right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Cart */}
+            <Link
+              href="/cart"
+              className="p-2 rounded-md hover:bg-gray-50 relative"
+            >
+              <ShoppingCart className="h-5 w-5 text-gray-700" />
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                0
+              </span>
+            </Link>
+
+            {/* Auth Buttons */}
+            <SignedOut>
+              <SignInButton>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hidden sm:inline-block"
+                >
+                  Log in
+                </Button>
+              </SignInButton>
+              <SignUpButton>
+                <Button size="sm" className="hidden sm:inline-block">
+                  Sign up
+                </Button>
+              </SignUpButton>
+            </SignedOut>
+
+            {/* Signed In State - Show User Avatar */}
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              <Menu />
+            </Button>
+          </div>
+
+          {/* Mobile Menu */}
         </div>
 
-        {/* Currency Dropdown */}
-        <select
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)} // ✅ Update global currency
-          className="bg-white border border-gray-300 rounded-md px-3 py-1 text-gray-700 focus:outline-none"
-        >
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="GBP">GBP</option>
-          <option value="PHP">PHP</option>
-        </select>
-      </div>
-
-      {/* Icons & Auth Buttons */}
-      <div className="flex items-center space-x-3 sm:space-x-4">
-        <Heart className="w-5 sm:w-6 h-5 sm:h-6 text-gray-700 cursor-pointer" />
-        <ShoppingCart className="w-5 sm:w-6 h-5 sm:h-6 text-gray-700 cursor-pointer" />
-
-        {/* Signed Out State - Show Login/Signup */}
-        <SignedOut>
-          <SignInButton>
-            <Button variant="outline" size="sm" className="hidden sm:inline-block">Log in</Button>
-          </SignInButton>
-          <SignUpButton>
-            <Button size="sm" className="hidden sm:inline-block">Sign up</Button>
-          </SignUpButton>
-        </SignedOut>
-
-        {/* Signed In State - Show User Avatar */}
-        <SignedIn>
-          <UserButton />
-        </SignedIn>
-
-        {/* Mobile Menu Button */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <Menu />
-        </Button>
+        {/* Mobile Search - Hidden on desktop */}
+        <div className="pb-4 px-2 md:hidden">
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Search products..."
+              className="w-full pl-4 pr-10"
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
+          </div>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="absolute top-16 left-0 w-full bg-white shadow-md p-4 flex flex-col space-y-3 md:hidden">
-          <Link href="/" className="font-medium hover:underline">Home</Link>
-          <Link href="/contact" className="font-medium hover:underline">Contact</Link>
-          <Link href="/about" className="font-medium hover:underline">About</Link>
-          <Input type="text" placeholder="Search..." className="w-full mt-2" />
+        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-3">
+          <SignedOut>
+            <div className="grid space-y-2">
+              <SignInButton>
+                <Button variant="outline" className="w-full">
+                  Sign In
+                </Button>
+              </SignInButton>
 
-          {/* Currency Dropdown in Mobile */}
-          <select
-            value={currency}
-            onChange={(e) => setCurrency(e.target.value)} // ✅ Update global currency
-            className="bg-white border border-gray-300 rounded-md px-3 py-1 text-gray-700 focus:outline-none w-full"
-          >
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-            <option value="PHP">PHP</option>
-          </select>
+              <SignUpButton>
+                <Button className="w-full">Sign Up</Button>
+              </SignUpButton>
+            </div>
+          </SignedOut>
+          <SignedIn>
+            <div className="flex justify-center">
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          </SignedIn>
+          <div className="pt-2">
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="w-full border-gray-300 rounded-md"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="PHP">PHP</option>
+            </select>
+          </div>
         </div>
       )}
     </header>
