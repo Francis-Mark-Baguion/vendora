@@ -42,7 +42,7 @@ const CartPage = () => {
       const { data: customerData, error: customerError } = await supabase
         .from("customer")
         .select("id")
-        .eq("clerk_user_id", user?.id) // Assuming you store Clerk user ID in this column
+        .eq("email", user?.emailAddresses.at(0)?.emailAddress) // Assuming you store Clerk user ID in this column
         .single();
 
   if (customerError || !customerData) {
