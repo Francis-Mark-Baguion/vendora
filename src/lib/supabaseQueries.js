@@ -96,7 +96,134 @@ export async function createNewAddress(
   return data;
 }
 
+export async function checkProductInCart(
+  customerId,
+  productId,
+  selected_size,
+  selected_color
+) {
+  const { data, error } = await supabase
+    .from("cart")
+    .select("*")
+    .eq("customer_id", customerId)
+    .eq("product_id", productId)
+    .eq("selected_size", selected_size)
+    .eq("selected_color", selected_color)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error checking product in cart:", error);
+    return false; // Return null if an error occurs
+  }
+
+  console.log("Product in cart:", data);
+  return data; // Return the cart item object if it exists, otherwise null
+}
+
+export async function getCartItem(
+  customerId,
+  productId,
+  selected_size,
+  selected_color
+) {
+  const { data, error } = await supabase
+    .from("cart")
+    .select("*")
+    .eq("customer_id", customerId)
+    .eq("product_id", productId)
+    .eq("selected_size", selected_size)
+    .eq("selected_color", selected_color)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching cart item:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetchedsss cart item:", data);
+
+  return data; // Return the cart item object if it exists, otherwise null
+}
+
+export async function updateCartProduct(cartItem) {
+  const quantity = await getCartItem(
+    cartItem.customer_id,
+    cartItem.product_id,
+    cartItem.selected_size,
+    cartItem.selected_color
+  );
+  if (quantity) {
+    cartItem.quantity = quantity.quantity + cartItem.quantity; // Update quantity
+  } else {
+    console.error("Cart item not found for update:", cartItem);
+    // Return null if cart item not found
+  }
+
+  const { data, error } = await supabase
+    .from("cart")
+    .update({
+      quantity: cartItem.quantity,
+      updated_at: new Date().toISOString(), // Set updated_at to current date and time
+    })
+    .eq("customer_id", cartItem.customer_id)
+    .eq("product_id", cartItem.product_id)
+    .eq("selected_size", cartItem.selected_size)
+    .eq("selected_color", cartItem.selected_color)
+    .select("*")
+    .single(); // return the updated row as a single object
+
+  if (error) {
+    console.error("Error updating product in cart:", error.message);
+    return null;
+  }
+
+  console.log("Updated product in cart:", data);
+  return data;
+}
+
+export async function getShippingFee() {
+  const { data, error } = await supabase
+    .from("shipping_fee")
+    .select("*")
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching shipping fee:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched shipping fee:", data);
+  return data; // Return the shipping fee object
+}
+
+export async function getCategory(categoryId) {
+  const { data, error } = await supabase
+    .from("category")
+    .select("*")
+    .eq("id", categoryId)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching category:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched category:", data);
+  return data; // Return the category object
+}
+
 export async function addCartProduct(cartItem) {
+  if (
+    await checkProductInCart(
+      cartItem.customer_id,
+      cartItem.product_id,
+      cartItem.selected_size,
+      cartItem.selected_color
+    )
+  ) {
+    console.log("Product already in cart, updating quantity...");
+    return await updateCartProduct(cartItem);
+  }
   const { data, error } = await supabase
     .from("cart")
     .insert([

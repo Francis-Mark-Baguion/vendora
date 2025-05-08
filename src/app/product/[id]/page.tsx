@@ -7,12 +7,16 @@ import {
   getProductById,
   getCustomerByEmail,
   addCartProduct,
+  updateCartProduct,
 } from "@/lib/supabaseQueries";
 import { Product } from "@/models/Product";
 import { CurrencyContext } from "@/context/CurrencyContext";
 import { ShoppingCart } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { getCategory } from "@/lib/supabaseQueries";
+import { get } from "http";
+import { supabase } from "@/lib/supabaseClient";
 
 const ProductPage = () => {
   const { id } = useParams();
@@ -20,10 +24,11 @@ const ProductPage = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("#000000");
-  const [selectedSize, setSelectedSize] = useState("M");
+  const [selectedSize, setSelectedSize] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { user } = useUser();
+  const [hasSize, setHasSize] = useState(false);
 
   const { currency, exchangeRate } = useContext(CurrencyContext);
   const colorHexMap: { [key: string]: string } = {
@@ -44,6 +49,22 @@ const ProductPage = () => {
     Maroon: "#800000",
     Navy: "#000080",
   };
+  function AddToCartButton() {
+    const router = useRouter();
+
+    const handleClick = () => {
+      router.push("/cart");
+    };
+
+    return (
+      <button
+        onClick={handleClick}
+        className="mt-2 text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+      >
+        View Cart →
+      </button>
+    );
+  }
 
   function getContrastYIQ(hexcolor: string) {
     hexcolor = hexcolor.replace("#", "");
@@ -77,6 +98,10 @@ const ProductPage = () => {
           );
           setProduct(newProduct);
           setSelectedImage(newProduct.getFirstImage());
+          const cat = await getCategory(newProduct.category_id);
+          if (cat.name === "Men's Fashion" || cat.name === "Women's Fashion") {
+            setHasSize(true);
+          }
         } else {
           setProduct(null);
         }
@@ -117,9 +142,13 @@ const ProductPage = () => {
         updated_at: new Date().toISOString(),
       };
 
+
+    
+
       const result = await addCartProduct(cartItem);
+      await supabase.from("product").update({ stock_quantity: product.stock_quantity - quantity }).eq("id", product.id);
       if (!result) {
-        toast.error("Failed to add item to cart");
+        toast.error("Failed to add item to cart " + result.error.message);
         return;
       }
 
@@ -134,15 +163,7 @@ const ProductPage = () => {
             <p className="text-sm text-gray-600">
               {quantity} × {product.name}
             </p>
-            <button
-              onClick={() => {
-                const router = useRouter();
-                router.push("/cart");
-              }}
-              className="mt-2 text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-            >
-              View Cart →
-            </button>
+            <AddToCartButton />
           </div>
         </div>,
         {
@@ -162,8 +183,11 @@ const ProductPage = () => {
             secondary: "#FFFFFF",
           },
         }
+
       );
+
     } catch (error) {
+      console.log("Error adding to cart:", error);
       toast.error("Failed to add item to cart");
     } finally {
       setIsAddingToCart(false);
@@ -245,7 +269,6 @@ const ProductPage = () => {
               </span>
             </div>
           </div>
-
           <div className="space-y-4">
             <p className="text-gray-700">{product.description}</p>
 
@@ -260,7 +283,6 @@ const ProductPage = () => {
               )}
             </div>
           </div>
-
           {/* Color Selection */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">Color</h3>
@@ -310,27 +332,27 @@ const ProductPage = () => {
               })}
             </div>
           </div>
-
           {/* Size Selection */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-900">Size</h3>
-            <div className="flex flex-wrap gap-2">
-              {product.available_sizes.map((size) => (
-                <button
-                  key={size}
-                  className={`px-4 py-2 text-sm border rounded-md transition-all ${
-                    selectedSize === size
-                      ? "bg-red-600 text-white border-red-600"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
+          {hasSize && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-gray-900">Size</h3>
+              <div className="flex flex-wrap gap-2">
+                {product.available_sizes.map((size) => (
+                  <button
+                    key={size}
+                    className={`px-4 py-2 text-sm border rounded-md transition-all ${
+                      selectedSize === size
+                        ? "bg-red-600 text-white border-red-600"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
+                    onClick={() => setSelectedSize(size)}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-
+          )}
           {/* Quantity Selector */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-900">Quantity</h3>
@@ -354,7 +376,6 @@ const ProductPage = () => {
               </button>
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
@@ -410,7 +431,6 @@ const ProductPage = () => {
               Buy Now
             </button>
           </div>
-
           {/* Additional Info */}
           <div className="pt-6 space-y-4 border-t border-gray-200">
             <div className="flex items-start gap-3">
