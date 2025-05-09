@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { CurrencyContext } from "@/context/CurrencyContext";
 import { useRouter, useSearchParams } from "next/navigation";
-
+import { Suspense } from "react";
 const Navbar = () => {
   const { cartCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,187 +41,195 @@ const Navbar = () => {
   };
 
   return (
-    <header className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo + Mobile Menu Button */}
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0">
-              <Image
-                src="/Vendora.png"
-                alt="Vendora Logo"
-                width={120}
-                height={40}
-                priority
-              />
-            </Link>
+    <Suspense>
+      <header className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo + Mobile Menu Button */}
+            <div className="flex items-center">
+              <Link href="/" className="flex-shrink-0">
+                <Image
+                  src="/Vendora.png"
+                  alt="Vendora Logo"
+                  width={120}
+                  height={40}
+                  priority
+                />
+              </Link>
+            </div>
+
+            {/* Search Bar - Centered and Expanded */}
+            <div className="flex-1 max-w-2xl mx-4 hidden md:block">
+              <form onSubmit={handleSearch} className="relative">
+                <Input
+                  type="text"
+                  placeholder="Search for products, brands, and more..."
+                  className="w-full pl-4 pr-10 py-2 rounded-lg border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full rounded-l-none"
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+              </form>
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-4">
+              {/*  Currency Selector */}
+              <div className="hidden md:block space-x-2">
+                <div className="relative">
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="appearance-none bg-transparent pl-8 pr-4 py-1 text-sm font-medium border border-gray-200 rounded-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+                  >
+                    <option value="USD">$ USD&nbsp;</option>
+                    <option value="EUR">€ EUR&nbsp;</option>
+                    <option value="GBP">£ GBP&nbsp;</option>
+                    <option value="PHP">₱ PHP&nbsp;</option>
+                  </select>
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-sm">
+                    {currency === "USD" && (
+                      <span title="United States">🇺🇸</span>
+                    )}
+                    {currency === "EUR" && (
+                      <span title="European Union">🇪🇺</span>
+                    )}
+                    {currency === "GBP" && (
+                      <span title="United Kingdom">🇬🇧</span>
+                    )}
+                    {currency === "PHP" && <span title="Philippines">🇵🇭</span>}
+                  </div>
+                  <ChevronDown className="absolute ml-4 right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Cart */}
+              <Link
+                href="/cart"
+                className="p-2 rounded-md hover:bg-gray-50 relative"
+              >
+                <ShoppingCart className="h-5 w-5 text-gray-700" />
+              </Link>
+
+              {/* Auth Buttons */}
+              <SignedOut>
+                <SignInButton>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:inline-block"
+                  >
+                    Log in
+                  </Button>
+                </SignInButton>
+                <SignUpButton>
+                  <Button size="sm" className="hidden sm:inline-block">
+                    Sign up
+                  </Button>
+                </SignUpButton>
+              </SignedOut>
+
+              {/* Signed In State - Show User Avatar */}
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                <Menu />
+              </Button>
+            </div>
           </div>
 
-          {/* Search Bar - Centered and Expanded */}
-          <div className="flex-1 max-w-2xl mx-4 hidden md:block">
+          {/* Mobile Search - Hidden on desktop */}
+          <div className="pb-4 px-2 md:hidden">
             <form onSubmit={handleSearch} className="relative">
               <Input
                 type="text"
-                placeholder="Search for products, brands, and more..."
-                className="w-full pl-4 pr-10 py-2 rounded-lg border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Search products..."
+                className="w-full pl-4 pr-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
                 type="submit"
-                variant="default"
+                variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-full rounded-l-none"
+                className="absolute right-0 top-0 h-full"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-5 w-5 text-gray-500" />
               </Button>
             </form>
           </div>
+        </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-4">
-            {/*  Currency Selector */}
-            <div className="hidden md:block space-x-2">
-              <div className="relative">
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="appearance-none bg-transparent pl-8 pr-4 py-1 text-sm font-medium border border-gray-200 rounded-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
-                >
-                  <option value="USD">$ USD&nbsp;</option>
-                  <option value="EUR">€ EUR&nbsp;</option>
-                  <option value="GBP">£ GBP&nbsp;</option>
-                  <option value="PHP">₱ PHP&nbsp;</option>
-                </select>
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-sm">
-                  {currency === "USD" && <span title="United States">🇺🇸</span>}
-                  {currency === "EUR" && <span title="European Union">🇪🇺</span>}
-                  {currency === "GBP" && <span title="United Kingdom">🇬🇧</span>}
-                  {currency === "PHP" && <span title="Philippines">🇵🇭</span>}
-                </div>
-                <ChevronDown className="absolute ml-4 right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Cart */}
-            <Link
-              href="/cart"
-              className="p-2 rounded-md hover:bg-gray-50 relative"
-            >
-              <ShoppingCart className="h-5 w-5 text-gray-700" />
-            </Link>
-
-            {/* Auth Buttons */}
+        {/* Mobile Menu */}
+        {menuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-3">
             <SignedOut>
-              <SignInButton>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden sm:inline-block"
-                >
-                  Log in
-                </Button>
-              </SignInButton>
-              <SignUpButton>
-                <Button size="sm" className="hidden sm:inline-block">
-                  Sign up
-                </Button>
-              </SignUpButton>
+              <div className="grid space-y-2">
+                <SignInButton>
+                  <Button variant="outline" className="w-full">
+                    Sign In
+                  </Button>
+                </SignInButton>
+
+                <SignUpButton>
+                  <Button className="w-full">Sign Up</Button>
+                </SignUpButton>
+              </div>
             </SignedOut>
-
-            {/* Signed In State - Show User Avatar */}
             <SignedIn>
-              <UserButton />
+              <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                <div className="relative">
+                  <UserButton
+                    afterSignOutUrl="/"
+                    appearance={{
+                      elements: {
+                        avatarBox: "h-9 w-9", // Slightly smaller avatar
+                        userButtonPopoverCard: "shadow-lg rounded-lg", // Better popover styling
+                      },
+                    }}
+                  />
+                </div>
+                <div className="block">
+                  <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                    {user?.firstName || "User"}
+                  </p>
+                  <p className="text-xs text-gray-500 line-clamp-1">
+                    {user?.emailAddresses.at(0)?.emailAddress}
+                  </p>
+                </div>
+              </div>
             </SignedIn>
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              <Menu />
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Search - Hidden on desktop */}
-        <div className="pb-4 px-2 md:hidden">
-          <form onSubmit={handleSearch} className="relative">
-            <Input
-              type="text"
-              placeholder="Search products..."
-              className="w-full pl-4 pr-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-full"
-            >
-              <Search className="h-5 w-5 text-gray-500" />
-            </Button>
-          </form>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-3">
-          <SignedOut>
-            <div className="grid space-y-2">
-              <SignInButton>
-                <Button variant="outline" className="w-full">
-                  Sign In
-                </Button>
-              </SignInButton>
-
-              <SignUpButton>
-                <Button className="w-full">Sign Up</Button>
-              </SignUpButton>
+            <div className="pt-2">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full border border-gray-300 rounded-md p-2"
+              >
+                <option value="USD">$ USD&nbsp;</option>
+                <option value="EUR">€ EUR&nbsp;</option>
+                <option value="GBP">£ GBP&nbsp;</option>
+                <option value="PHP">₱ PHP&nbsp;</option>
+              </select>
             </div>
-          </SignedOut>
-          <SignedIn>
-            <div className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-              <div className="relative">
-                <UserButton
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "h-9 w-9", // Slightly smaller avatar
-                      userButtonPopoverCard: "shadow-lg rounded-lg", // Better popover styling
-                    },
-                  }}
-                />
-              </div>
-              <div className="block">
-                <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                  {user?.firstName || "User"}
-                </p>
-                <p className="text-xs text-gray-500 line-clamp-1">
-                  {user?.emailAddresses.at(0)?.emailAddress}
-                </p>
-              </div>
-            </div>
-          </SignedIn>
-          <div className="pt-2">
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full border border-gray-300 rounded-md p-2"
-            >
-              <option value="USD">$ USD&nbsp;</option>
-              <option value="EUR">€ EUR&nbsp;</option>
-              <option value="GBP">£ GBP&nbsp;</option>
-              <option value="PHP">₱ PHP&nbsp;</option>
-            </select>
           </div>
-        </div>
-      )}
-    </header>
+        )}
+      </header>
+    </Suspense>
   );
 };
 
