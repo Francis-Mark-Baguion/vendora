@@ -28,7 +28,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/context/CartContext.js",
-    "src/app/(root)/page.js"
+    "src/app/(root)/page.js",
+    "src/components/breadcrumbs.js"
   ],
   "exclude": ["node_modules"]
 }

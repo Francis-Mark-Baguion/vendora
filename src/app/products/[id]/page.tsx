@@ -18,10 +18,12 @@ import { getCategory } from "@/lib/supabaseQueries";
 import { get } from "http";
 import { supabase } from "@/lib/supabaseClient";
 import { useCart } from "@/context/CartContext";
+import Breadcrumbs from "@/components/breadcrumbs";
 
 const ProductPage = () => {
   const { id } = useParams();
-  const { incrementCartCount, decrementCartCount } = useCart();
+  const { incrementCartCount, decrementCartCount, updateCartCount, cartCount } =
+    useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(0);
@@ -138,9 +140,8 @@ const ProductPage = () => {
       console.log("Product Data:", productData);
       // Simulate API call to add to cart
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const userData = await getCustomerByEmail(
-        user?.emailAddresses[0].emailAddress || ""
-      );
+      const userData: { id: string; email: string } | null =
+        await getCustomerByEmail(user?.emailAddresses[0].emailAddress || "");
       if (!userData) {
         toast.error("User not found");
         return;
@@ -172,6 +173,8 @@ const ProductPage = () => {
         toast.error("Failed to add item to cart");
         return;
       }
+
+      updateCartCount(cartCount + quantity);
 
       // In a real app, you would call your addToCart API here
       // await addToCart(product.id, quantity, selectedSize, selectedColor);
@@ -228,7 +231,8 @@ const ProductPage = () => {
     );
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-24">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-24 md:mt-12">
+      <Breadcrumbs />
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 lg:gap-8 max-w-7xl mx-auto px-4">
         {/* Thumbnail Gallery - First Column */}
         <div className="md:col-span-1 p-4 flex flex-row md:flex-col gap-3 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 snap-x snap-mandatory">
@@ -379,7 +383,6 @@ const ProductPage = () => {
               <button
                 onClick={() => {
                   setQuantity(quantity > 1 ? quantity - 1 : 0);
-                  decrementCartCount();
                 }}
                 className="px-3 py-2 text-lg hover:bg-gray-100 transition-colors"
                 disabled={quantity <= 0}
@@ -392,7 +395,6 @@ const ProductPage = () => {
               <button
                 onClick={() => {
                   setQuantity(quantity + 1);
-                  incrementCartCount(quantity + 1);
                 }}
                 className="px-3 py-2 text-lg hover:bg-gray-100 transition-colors"
                 disabled={quantity >= product.stock_quantity}

@@ -1,42 +1,61 @@
-import { useState, useContext } from "react";
+"use client";
+import { useState, useContext, useEffect } from "react";
 import Link from "next/link";
 import { Heart, Eye } from "lucide-react";
 import { Product } from "@/models/Product";
-import { CurrencyContext } from "@/context/CurrencyContext"; // ✅ Import Currency Context
+import { CurrencyContext } from "@/context/CurrencyContext";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const [liked, setLiked] = useState(false);
-  const { currency, exchangeRate } = useContext(CurrencyContext); // ✅ Use CurrencyContext
-  
-  const convertedPrice = product.price.toFixed(2);
+  const { currency, exchangeRate } = useContext(CurrencyContext);
+  const [hasStock, setHasStock] = useState(true);
+
+  // Calculate converted price based on exchange rate
+  const convertedPrice = (product.price * exchangeRate).toFixed(2);
 
   // Select the first image from the JSON array
   const productImage = Array.isArray(product.image_url)
     ? product.image_url[0]
     : product.image_url;
 
+  // Set stock status when component mounts
+  useEffect(() => {
+    setHasStock(product.stock_quantity > 0);
+  }, [product.stock_quantity]);
+
   return (
-    <Link href={`/product/${product.id}`} className="block">
+    <Link href={`/products/${product.id}`} className="block">
       <div
-        className="border rounded-lg shadow-md bg-white w-64 h-96 p-4 cursor-pointer flex flex-col 
-        transition-transform duration-300 ease-in-out hover:scale-105"
+        className={`border rounded-lg shadow-md bg-white w-64 h-96 p-4 cursor-pointer flex flex-col 
+        transition-transform duration-300 ease-in-out hover:scale-105
+        ${!hasStock ? "opacity-70" : ""}`}
       >
-        {" "}
-        {/* ✅ Added hover effect */}
+        {/* Out of Stock Badge */}
+        {!hasStock && (
+          <div className="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+            SOLD OUT
+          </div>
+        )}
+
         {/* Image Container */}
         <div className="relative h-40">
           <img
-            src={productImage} // ✅ Select the first image from array
+            src={productImage}
             alt={product.name}
-            className="w-full h-full object-cover rounded-md"
+            className={`w-full h-full object-cover rounded-md ${
+              !hasStock ? "grayscale" : ""
+            }`}
           />
+          {/* Quick View and Wishlist Icons */}
+          
         </div>
+
         {/* Product Details */}
         <div className="flex-grow flex flex-col justify-between mt-2">
           <div>
             <h3 className="text-lg font-semibold truncate">{product.name}</h3>
             <p className="text-sm text-gray-500 line-clamp-2">
-              {product.getShortDescription(60)}
+              {product.description}
             </p>
           </div>
 
@@ -44,7 +63,6 @@ const ProductCard = ({ product }: { product: Product }) => {
           <div>
             <div className="text-red-500 font-bold text-lg">
               {currency} {Number(convertedPrice).toLocaleString()}
-              {/* ✅ Display updated price */}
             </div>
 
             {/* Rating */}
@@ -67,15 +85,17 @@ const ProductCard = ({ product }: { product: Product }) => {
             </div>
 
             {/* Stock Indicator */}
-            {product.isInStock() ? (
-              <span className="text-green-500 text-sm font-medium">
-                In Stock
-              </span>
-            ) : (
-              <span className="text-red-500 text-sm font-medium">
-                Out of Stock
-              </span>
-            )}
+            <div className="mt-1">
+              {hasStock ? (
+                <span className="text-green-500 text-sm font-medium">
+                  {product.stock_quantity} in stock
+                </span>
+              ) : (
+                <span className="text-red-500 text-sm font-medium">
+                  Out of Stock
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

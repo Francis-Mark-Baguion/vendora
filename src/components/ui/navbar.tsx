@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ShoppingCart, Menu, ChevronDown } from "lucide-react";
@@ -17,12 +19,26 @@ import {
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { CurrencyContext } from "@/context/CurrencyContext";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const Navbar = () => {
   const { cartCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useUser();
   const { currency, setCurrency } = useContext(CurrencyContext);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (searchQuery.trim()) {
+      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push("/products");
+    }
+  };
 
   return (
     <header className="w-full bg-white border-b border-gray-100 fixed top-0 left-0 z-50">
@@ -30,15 +46,6 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo + Mobile Menu Button */}
           <div className="flex items-center">
-            {/* <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden mr-2"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button> */}
-
             <Link href="/" className="flex-shrink-0">
               <Image
                 src="/Vendora.png"
@@ -52,20 +59,23 @@ const Navbar = () => {
 
           {/* Search Bar - Centered and Expanded */}
           <div className="flex-1 max-w-2xl mx-4 hidden md:block">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <Input
                 type="text"
                 placeholder="Search for products, brands, and more..."
                 className="w-full pl-4 pr-10 py-2 rounded-lg border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Button
+                type="submit"
                 variant="default"
                 size="icon"
                 className="absolute right-0 top-0 h-full rounded-l-none"
               >
                 <Search className="h-5 w-5" />
               </Button>
-            </div>
+            </form>
           </div>
 
           {/* Right Side Actions */}
@@ -99,9 +109,6 @@ const Navbar = () => {
               className="p-2 rounded-md hover:bg-gray-50 relative"
             >
               <ShoppingCart className="h-5 w-5 text-gray-700" />
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {cartCount}
-              </span>
             </Link>
 
             {/* Auth Buttons */}
@@ -137,20 +144,27 @@ const Navbar = () => {
               <Menu />
             </Button>
           </div>
-
-          {/* Mobile Menu */}
         </div>
 
         {/* Mobile Search - Hidden on desktop */}
         <div className="pb-4 px-2 md:hidden">
-          <div className="relative">
+          <form onSubmit={handleSearch} className="relative">
             <Input
               type="text"
               placeholder="Search products..."
               className="w-full pl-4 pr-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
-          </div>
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full"
+            >
+              <Search className="h-5 w-5 text-gray-500" />
+            </Button>
+          </form>
         </div>
       </div>
 
