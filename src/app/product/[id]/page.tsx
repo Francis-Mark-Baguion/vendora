@@ -17,12 +17,14 @@ import { useRouter } from "next/navigation";
 import { getCategory } from "@/lib/supabaseQueries";
 import { get } from "http";
 import { supabase } from "@/lib/supabaseClient";
+import { useCart } from "@/context/CartContext";
 
 const ProductPage = () => {
   const { id } = useParams();
+  const { incrementCartCount, decrementCartCount } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(0);
   const [selectedColor, setSelectedColor] = useState("#000000");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -74,6 +76,7 @@ const ProductPage = () => {
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
     return yiq >= 128 ? "black" : "white";
   }
+
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) return;
@@ -98,7 +101,9 @@ const ProductPage = () => {
           );
           setProduct(newProduct);
           setSelectedImage(newProduct.getFirstImage());
+          console.log("Product Data:", newProduct);
           const cat = await getCategory(newProduct.category_id);
+          console.log("Category:", cat.name);
           if (cat.name === "Men's Fashion" || cat.name === "Women's Fashion") {
             setHasSize(true);
           }
@@ -119,6 +124,16 @@ const ProductPage = () => {
 
     setIsAddingToCart(true);
     try {
+      if (hasSize && !selectedSize) {
+        toast.error("Please select a size.");
+        return;
+      }
+
+      if (quantity <= 0) {
+        toast.error("Please select a quantity.");
+        return;
+      }
+
       const productData = await getProductById(id as string);
       console.log("Product Data:", productData);
       // Simulate API call to add to cart
@@ -142,13 +157,19 @@ const ProductPage = () => {
         updated_at: new Date().toISOString(),
       };
 
-
-    
+      const prod = await getProductById(productData!.id);
+      if (prod?.stock_quantity < quantity) {
+        toast.error("Not enough stock available");
+        return;
+      }
 
       const result = await addCartProduct(cartItem);
-      await supabase.from("product").update({ stock_quantity: product.stock_quantity - quantity }).eq("id", product.id);
+      await supabase
+        .from("product")
+        .update({ stock_quantity: product.stock_quantity - quantity })
+        .eq("id", product.id);
       if (!result) {
-        toast.error("Failed to add item to cart " + result.error.message);
+        toast.error("Failed to add item to cart");
         return;
       }
 
@@ -183,9 +204,7 @@ const ProductPage = () => {
             secondary: "#FFFFFF",
           },
         }
-
       );
-
     } catch (error) {
       console.log("Error adding to cart:", error);
       toast.error("Failed to add item to cart");
@@ -358,9 +377,12 @@ const ProductPage = () => {
             <h3 className="text-sm font-medium text-gray-900">Quantity</h3>
             <div className="flex items-center border border-gray-300 rounded-md w-fit">
               <button
-                onClick={() => setQuantity(quantity > 1 ? quantity - 1 : 1)}
+                onClick={() => {
+                  setQuantity(quantity > 1 ? quantity - 1 : 0);
+                  decrementCartCount();
+                }}
                 className="px-3 py-2 text-lg hover:bg-gray-100 transition-colors"
-                disabled={quantity <= 1}
+                disabled={quantity <= 0}
               >
                 -
               </button>
@@ -368,7 +390,10 @@ const ProductPage = () => {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => {
+                  setQuantity(quantity + 1);
+                  incrementCartCount(quantity + 1);
+                }}
                 className="px-3 py-2 text-lg hover:bg-gray-100 transition-colors"
                 disabled={quantity >= product.stock_quantity}
               >
@@ -450,7 +475,7 @@ const ProductPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Free Delivery</p>
+                <p className="font-medium text-gray-900">Fast Delivery</p>
                 <p className="text-sm text-gray-600">
                   Estimated delivery time: 2-4 business days
                 </p>

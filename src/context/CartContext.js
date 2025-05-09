@@ -1,33 +1,42 @@
 // context/CartContext.js
-import { createContext, useState } from "react";
+"use client";
+import { createContext, useState, useContext } from "react";
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
 
-  const updateQuantity = (id, quantity) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(1, quantity) } : item
-      )
-    );
+  // Function to update the cart count (you can modify this as needed)
+  const updateCartCount = (newCount) => {
+    setCartCount(newCount);
   };
 
-  const removeFromCart = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  // Function to increment the cart count (optional)
+  const incrementCartCount = () => {
+    setCartCount((prevCount) => prevCount + 1);
+  };
+
+  // Function to decrement the cart count (optional)
+  const decrementCartCount = () => {
+    setCartCount((prevCount) => (prevCount > 0 ? prevCount - 1 : 0));
   };
 
   return (
     <CartContext.Provider
       value={{
-        cartItems,
-        setCartItems,
-        updateQuantity,
-        removeFromCart,
+        cartCount,
+        updateCartCount,
+        incrementCartCount,
+        decrementCartCount,
       }}
     >
       {children}
     </CartContext.Provider>
   );
+};
+
+// Custom hook for easier consumption of the context
+export const useCart = () => {
+  return useContext(CartContext);
 };

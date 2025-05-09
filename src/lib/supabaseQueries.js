@@ -112,7 +112,6 @@ export async function checkProductInCart(
     .single(); // Fetch a single row
 
   if (error) {
-    console.error("Error checking product in cart:", error);
     return false; // Return null if an error occurs
   }
 

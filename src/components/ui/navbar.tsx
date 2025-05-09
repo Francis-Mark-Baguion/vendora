@@ -6,7 +6,7 @@ import { Search, ShoppingCart, Menu, ChevronDown } from "lucide-react";
 import { useState, useContext } from "react";
 import Link from "next/link";
 import "flag-icons/css/flag-icons.min.css";
-
+import { useCart } from "@/context/CartContext";
 import {
   SignedIn,
   SignedOut,
@@ -19,6 +19,7 @@ import { useUser } from "@clerk/nextjs";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
 const Navbar = () => {
+  const { cartCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useUser();
   const { currency, setCurrency } = useContext(CurrencyContext);
@@ -99,7 +100,7 @@ const Navbar = () => {
             >
               <ShoppingCart className="h-5 w-5 text-gray-700" />
               <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
+                {cartCount}
               </span>
             </Link>
 

@@ -12,7 +12,7 @@ import { getShippingFee, getProductById } from "@/lib/supabaseQueries";
 import { supabase } from "@/lib/supabaseClient";
 import toast from "react-hot-toast";
 import { CurrencyContext } from "@/context/CurrencyContext";
-
+import { useCart } from "@/context/CartContext";
 interface CartItem {
   id: string;
   product_id: string;
@@ -30,6 +30,13 @@ interface CartItem {
 }
 
 const CartPage = () => {
+  const {
+    incrementCartCount,
+    decrementCartCount,
+    cartCount,
+    setCartCount,
+    updateCartCount,
+  } = useCart();
   const { user } = useUser();
   const [shippingFee, setShippingFee] = useState(0);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -85,6 +92,20 @@ const CartPage = () => {
 
   const removeItem = async (itemId: string) => {
     try {
+      const cartItem = await supabase
+        .from("cart")
+        .select("*")
+        .eq("id", itemId)
+        .single();
+      updateCartCount(cartCount - cartItem.data.quantity);
+      const prodData = await getProductById(cartItem.data.product_id);
+      const { data: product, error: productError } = await supabase
+        .from("product")
+        .update({
+          stock_quantity: prodData?.stock_quantity + cartItem.data.quantity,
+        })
+        .eq("id", cartItem.data.product_id)
+        .single();
       const { error } = await supabase.from("cart").delete().eq("id", itemId);
 
       if (error) throw error;
@@ -125,6 +146,7 @@ const CartPage = () => {
 
       // Calculate stock difference
       const quantityDifference = newQuantity - cartItem.quantity;
+      updateCartCount(cartCount + quantityDifference);
       const newStock = product.stock_quantity - quantityDifference;
 
       // Validate stock availability
