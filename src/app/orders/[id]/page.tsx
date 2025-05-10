@@ -23,11 +23,10 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
+type PageProps = {
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
 
 interface OrderDetails {
   id: string;

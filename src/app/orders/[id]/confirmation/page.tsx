@@ -18,11 +18,10 @@ import { Check, Package } from "lucide-react";
 import { useContext } from "react";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
+type PageProps = {
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
 
 interface OrderDetails {
   id: string;
