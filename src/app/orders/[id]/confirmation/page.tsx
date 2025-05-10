@@ -18,7 +18,7 @@ import { Check, Package } from "lucide-react";
 import { useContext } from "react";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
-interface OrderConfirmationProps {
+interface PageProps {
   params: {
     id: string;
   };
@@ -58,7 +58,7 @@ interface OrderDetails {
   }>;
 }
 
-export default function OrderConfirmation({ params }: OrderConfirmationProps) {
+export default function OrderConfirmation({ params }: PageProps) {
   const { id } = params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
@@ -86,7 +86,8 @@ export default function OrderConfirmation({ params }: OrderConfirmationProps) {
         // Get order with address
         const { data: orderData, error: orderError } = await supabase
           .from("order")
-          .select(`
+          .select(
+            `
             *,
             address:address_id(
               full_name,
@@ -98,7 +99,8 @@ export default function OrderConfirmation({ params }: OrderConfirmationProps) {
               country,
               phone_number
             )
-          `)
+          `
+          )
           .eq("id", id)
           .eq("customer_id", customerData.id)
           .single();
@@ -110,13 +112,15 @@ export default function OrderConfirmation({ params }: OrderConfirmationProps) {
         // Get order items with products
         const { data: orderItems, error: itemsError } = await supabase
           .from("order_item")
-          .select(`
+          .select(
+            `
             *,
             product:product_id(
               name,
               image_url
             )
-          `)
+          `
+          )
           .eq("order_id", id);
 
         if (itemsError) {

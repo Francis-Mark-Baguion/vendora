@@ -24,7 +24,7 @@ import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
 
-interface OrderDetailsProps {
+interface PageProps {
   params: {
     id: string;
   };
@@ -92,7 +92,7 @@ const hexColorMap: Record<string, string> = {
   "#000080": "Navy",
 };
 
-export default function OrderDetailsPage({ params }: OrderDetailsProps) {
+export default function OrderDetailsPage({ params }: PageProps) {
   const { id } = params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
@@ -209,8 +209,8 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
 
   if (error || !order) {
     return (
-        <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-            <Breadcrumbs />
+      <div className="max-w-3xl mx-auto px-4 py-12 text-center">
+        <Breadcrumbs />
         <h1 className="text-2xl font-bold mb-4">Order Not Found</h1>
         <p className="text-gray-600 mb-6">
           {error || "We couldn't find the order you're looking for."}
@@ -223,8 +223,8 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
   }
 
   return (
-      <div className="max-w-4xl mx-auto px-4 py-8 mt-24">
-          <Breadcrumbs />
+    <div className="max-w-4xl mx-auto px-4 py-8 mt-24">
+      <Breadcrumbs />
       {/* <div className="flex items-center mb-8">
         <Link
           href="/orders"
@@ -337,7 +337,12 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
                   </div>
                 </div>
                 <Button variant="outline" size="sm" className="text-xs">
-                  <ExternalLink className="h-3 w-3 mr-1" onClick={() => toast.error("Sorry! This feature is not yet implemented.")} />
+                  <ExternalLink
+                    className="h-3 w-3 mr-1"
+                    onClick={() =>
+                      toast.error("Sorry! This feature is not yet implemented.")
+                    }
+                  />
                   Track
                 </Button>
               </div>
@@ -513,14 +518,14 @@ export default function OrderDetailsPage({ params }: OrderDetailsProps) {
               </Button>
               {order.status !== "delivered" &&
                 order.status !== "cancelled" &&
-                order.status !== "shipped" &&(
-                    <Button
-                      variant="outline"
-                      className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Cancel Order
-                    </Button>
-                  )}
+                order.status !== "shipped" && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    Cancel Order
+                  </Button>
+                )}
             </CardContent>
           </Card>
         </div>
