@@ -1,23 +1,33 @@
 // app/orders/[id]/confirmation/page.tsx
 import { OrderConfirmationClient } from "./OrderConfirmationClient";
 import { getOrderDetails } from "@/lib/orderQueries";
+import { Metadata } from "next";
 
-interface PageProps {
-  params: { id: string };
-}
+// Define params as Promise
+type PageParams = Promise<{ id: string }>;
 
-export default async function OrderConfirmationPage({ params }: PageProps) {
+export default async function OrderConfirmationPage({
+  params,
+}: {
+  params: PageParams;
+}) {
+  // Await the params promise
+  const { id } = await params;
+
   // Fetch order data on the server
-  const orderData = await getOrderDetails(params.id);
+  const orderData = await getOrderDetails(id);
 
-  return (
-    <OrderConfirmationClient orderId={params.id} initialOrderData={orderData} />
-  );
+  return <OrderConfirmationClient orderId={id} initialOrderData={orderData} />;
 }
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata({
+  params,
+}: {
+  params: PageParams;
+}): Promise<Metadata> {
+  const { id } = await params;
   return {
-    title: `Order Confirmation #${params.id.slice(0, 8)}`,
+    title: `Order Confirmation #${id.slice(0, 8)}`,
     description: "Your order confirmation details",
   };
 }
