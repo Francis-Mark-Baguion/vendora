@@ -23,9 +23,13 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
+
 interface OrderDetailsProps {
   params: {
     id: string;
+  };
+  searchParams?: {
+    [key: string]: string | string[] | undefined;
   };
 }
 

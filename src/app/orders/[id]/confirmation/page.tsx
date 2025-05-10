@@ -22,6 +22,9 @@ interface OrderConfirmationProps {
   params: {
     id: string;
   };
+  searchParams?: {
+    [key: string]: string | string[] | undefined;
+  };
 }
 
 interface OrderDetails {
