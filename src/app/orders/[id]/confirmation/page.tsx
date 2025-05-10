@@ -18,14 +18,9 @@ import { Check, Package } from "lucide-react";
 import { useContext } from "react";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-  searchParams?: {
-    [key: string]: string | string[] | undefined;
-  };
-}
+type PageParams = {
+  id: string;
+};
 
 interface OrderDetails {
   id: string;
@@ -58,7 +53,7 @@ interface OrderDetails {
   }>;
 }
 
-export default function OrderConfirmation({ params }: PageProps) {
+export default function OrderConfirmation({ params }: { params: PageParams }) {
   const { id } = params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);

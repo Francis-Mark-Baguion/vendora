@@ -24,14 +24,9 @@ import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-  searchParams?: {
-    [key: string]: string | string[] | undefined;
-  };
-}
+type PageParams = {
+  id: string;
+};
 
 interface OrderDetails {
   id: string;
@@ -92,7 +87,7 @@ const hexColorMap: Record<string, string> = {
   "#000080": "Navy",
 };
 
-export default function OrderDetailsPage({ params }: PageProps) {
+export default function OrderDetailsPage({ params }: { params: PageParams }) {
   const { id } = params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
