@@ -352,9 +352,9 @@ const CartPage = () => {
             {newFormatPrice(totalPriceWithShipFee, currency)}
           </span>
         </div>
-
-        <Button className="w-full mt-6 h-12">Proceed to Checkout</Button>
-
+        <Link href={"/cart/checkout"} className="w-full">
+          <Button className="w-full mt-6 h-12">Proceed to Checkout</Button>
+        </Link>
         <div className="mt-4 flex justify-center">
           <Link
             href="/products"

@@ -349,6 +349,21 @@ export async function getProductsSearch(searchQuery) {
   return data; // Returns an array of product objects
 }
 
+export async function getAddressByCustomerId(customerId) {
+  let { data, error } = await supabase
+    .from("address")
+    .select("*")
+    .eq("id", customerId)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching address by customer ID:", error);
+    return null; // Return null if an error occurs
+  }
+
+  return data; // Return the address object
+}
+
 export async function getProductById(productId) {
   let { data, error } = await supabase
     .from("product")

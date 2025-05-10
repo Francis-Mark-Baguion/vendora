@@ -218,7 +218,7 @@ const Navbar = () => {
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="w-full border border-gray-300 rounded-md p-2"
+                className="w-full border border-gray-300 rounded-md p-2 pr-8"
               >
                 <option value="USD">$ USD&nbsp;</option>
                 <option value="EUR">€ EUR&nbsp;</option>

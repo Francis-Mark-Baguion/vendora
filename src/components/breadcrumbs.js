@@ -20,39 +20,45 @@ export default function Breadcrumbs() {
     // Find all product IDs in the path
     const productIds = pathSegments
       .map((segment, index) => {
-        if (index > 0 && pathSegments[index - 1] === "products" && segment) {
-         
-          return segment
+        if (
+          index > 0 &&
+          (pathSegments[index - 1] === "products" ||
+            pathSegments[index - 1] === "orders") &&
+          segment
+        ) {
+          return segment;
         }
-        return null
+        return null;
       })
-      .filter(Boolean)
+      .filter(Boolean);
 
     if (productIds.length > 0) {
       // Fetch product names for all found product IDs
       const fetchProductNames = async () => {
-        const names = {}
-          for (var id of productIds) {
-          
+        const names = {};
+        for (var id of productIds) {
           try {
-            const product = await getProductById(id)
+            const product = await getProductById(id);
             if (product && product.name) {
-              names[id] = product.name
+              names[id] = product.name;
               console.log(product.name);
             }
           } catch (error) {
-            console.error(`Error fetching product ${id}:`, error)
-            names[id] = null
+            console.error(`Error fetching product ${id}:`, error);
+            names[id] = null;
           }
         }
-        setProductNames(names)
-      }
-      fetchProductNames()
+        setProductNames(names);
+      };
+      fetchProductNames();
     }
-  }, [pathname])
+  }, [pathname]);
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center text-sm text-muted-foreground py-4">
+    <nav
+      aria-label="Breadcrumb"
+      className="px-4 flex items-center text-sm text-muted-foreground py-4"
+    >
       <ol className="flex items-center space-x-2">
         <li>
           <Link href="/" className="flex items-center hover:text-foreground">
@@ -63,36 +69,50 @@ export default function Breadcrumbs() {
 
         {pathSegments.map((segment, index) => {
           // Create the path for this breadcrumb
-          const path = `/${pathSegments.slice(0, index + 1).join("/")}`
-          const isLast = index === pathSegments.length - 1
+          const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
+          const isLast = index === pathSegments.length - 1;
 
           // Check if this is a product ID (preceded by "product")
-          const isProductId = index > 0 && pathSegments[index - 1] === "products"
-          
+          const isProductId =
+            index > 0 &&
+            (pathSegments[index - 1] === "products" ||
+              pathSegments[index - 1] === "orders");
+
           // Get display text - use product name if available, otherwise format the segment
-          let displayText
+          let displayText;
+          if (isProductId && productNames[segment] === null) {
+            displayText = pathSegments[index].slice(0, 8);
+          }
           if (isProductId && productNames[segment]) {
-            displayText = productNames[segment]
+            displayText = productNames[segment];
           } else {
-            displayText = segment.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+            displayText = segment
+              .replace(/-/g, " ")
+              .replace(/\b\w/g, (char) => char.toUpperCase());
           }
 
           return (
             <li key={path} className="flex items-center">
               <ChevronRight className="h-4 w-4 mx-1" />
               {isLast ? (
-                <span aria-current="page" className="font-medium text-foreground overflow-ellipsis ellipsis">
+                <span
+                  aria-current="page"
+                  className="font-medium text-foreground overflow-ellipsis ellipsis"
+                >
                   {displayText}
                 </span>
               ) : (
-                <Link href={path} className="hover:text-foreground overflow-ellipsis ellipsis">
+                <Link
+                  href={path}
+                  className="hover:text-foreground overflow-ellipsis ellipsis"
+                >
                   {displayText}
                 </Link>
               )}
             </li>
-          )
+          );
         })}
       </ol>
     </nav>
-  )
+  );
 }

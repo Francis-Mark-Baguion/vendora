@@ -53,7 +53,7 @@ export default function ProductsPage() {
   return (
     <Suspense>
       <div className="container mx-auto px-4 py-6 mt-24 md:mt-12 max-w-7xl min-h-screen">
-        <Breadcrumbs />
+        <Breadcrumbs className="px-5" />
 
         {forSearch ? (
           <div className="mb-8">
@@ -67,7 +67,7 @@ export default function ProductsPage() {
             </p>
           </div>
         ) : (
-          <div className="mb-8">
+          <div className="mb-8 px-4">
             <h1 className="text-xl md:text-2xl font-bold">
               Vendora's Products
             </h1>
