@@ -20,12 +20,7 @@ export default function Breadcrumbs() {
     // Find all product IDs in the path
     const productIds = pathSegments
       .map((segment, index) => {
-        if (
-          index > 0 &&
-          (pathSegments[index - 1] === "products" ||
-            pathSegments[index - 1] === "orders") &&
-          segment
-        ) {
+        if (index > 0 && pathSegments[index - 1] === "products" && segment) {
           return segment;
         }
         return null;
@@ -80,10 +75,9 @@ export default function Breadcrumbs() {
 
           // Get display text - use product name if available, otherwise format the segment
           let displayText;
-          if (isProductId && productNames[segment] === null) {
+          if (pathSegments[index - 1] === "orders") {
             displayText = pathSegments[index].slice(0, 8);
-          }
-          if (isProductId && productNames[segment]) {
+          } else if (isProductId && pathSegments[index - 1] === "products") {
             displayText = productNames[segment];
           } else {
             displayText = segment
