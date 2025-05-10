@@ -18,10 +18,7 @@ import { Check, Package } from "lucide-react";
 import { useContext } from "react";
 import { CurrencyContext } from "@/context/CurrencyContext";
 
-type PageProps = {
-  params: { id: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
+type PageParams = Promise<{ id: string }>;
 
 interface OrderDetails {
   id: string;
@@ -54,8 +51,13 @@ interface OrderDetails {
   }>;
 }
 
-export default function OrderConfirmationPage({ params }: PageProps) {
-  const { id } = params;
+export default async function OrderConfirmationPage({
+  params,
+}: {
+  params: PageParams;
+}) {
+  // Await the params promise
+  const { id } = await params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);

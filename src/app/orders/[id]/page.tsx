@@ -23,10 +23,9 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
-type PageProps = {
-  params: { id: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
+
+// Define params as Promise
+type PageParams = Promise<{ id: string }>;
 
 interface OrderDetails {
   id: string;
@@ -87,8 +86,9 @@ const hexColorMap: Record<string, string> = {
   "#000080": "Navy",
 };
 
-export default function OrderDetailsPage({ params }: PageProps) {
-  const { id } = params;
+export default async function OrderDetailsPage({ params }: { params: PageParams }) {
+  // Await the params promise
+  const { id } = await params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
