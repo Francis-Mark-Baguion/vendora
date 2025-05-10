@@ -23,10 +23,11 @@ import Image from "next/image";
 import toast from "react-hot-toast";
 import Breadcrumbs from "@/components/breadcrumbs";
 
-
-type PageProps = {
-  id: string;
-};
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
 
 interface OrderDetails {
   id: string;
@@ -87,7 +88,7 @@ const hexColorMap: Record<string, string> = {
   "#000080": "Navy",
 };
 
-export default function OrderDetailsPage({ params }: { params: PageProps }) {
+export default function OrderDetailsPage({ params }: PageProps) {
   const { id } = params;
   const { user } = useUser();
   const [order, setOrder] = useState<OrderDetails | null>(null);
