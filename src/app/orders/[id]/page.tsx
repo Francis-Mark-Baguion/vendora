@@ -1,19 +1,34 @@
 import OrderDetailsClient from "./OrderDetailsClient";
 import { getOrderDetails } from "@/lib/orderQueries";
+import { Metadata } from "next";
 
-interface PageParams {
-  params: {
-    id: string;
+type PageParams = Promise<{ id: string }>;
+
+export default async function OrderDetailsPage({
+  params,
+}: {
+  params: PageParams;
+}) {
+  // Await the params promise
+  const { id } = await params;
+
+  const orderData = await getOrderDetails(id);
+
+  return <OrderDetailsClient orderId={id} initialOrderData={orderData} />;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: PageParams;
+}): Promise<Metadata> {
+  const { id } = await params;
+  return {
+    title: `Order Information #${id.slice(0, 8)}`,
+    description: "Your order details",
   };
 }
 
-export default async function OrderDetailsPage({ params }: PageParams) {
-  const orderData = await getOrderDetails(params.id);
-
-  return (
-    <OrderDetailsClient orderId={params.id} initialOrderData={orderData} />
-  );
-}
 // "use client";
 
 // import { useUser } from "@clerk/nextjs";
