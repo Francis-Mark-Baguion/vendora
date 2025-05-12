@@ -78,14 +78,15 @@ export default function CustomerInfoPage() {
         formData.lastName,
         user?.primaryEmailAddress?.emailAddress,
         formData.phoneNumber,
-        addressData.id
+        addressData.id,
+        user?.id
       );
       if (!customerData) {
         throw new Error("Failed to create customer data");
       }
       console.log("Customer data created:", customerData.id);
       // Redirect  after successful submission
-      router.push("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Submission error:", error);
     } finally {

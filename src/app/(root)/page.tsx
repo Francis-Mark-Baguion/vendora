@@ -6,7 +6,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { customerExist } from "@/lib/supabaseQueries";
 import CategoryMenu from "@/components/ui/category-menu";
 import {
   getCarouselImages,

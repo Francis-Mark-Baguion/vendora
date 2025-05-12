@@ -1,7 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
-import { create } from "domain";
-
-const DEFAULT_IMAGE = "/default.jpg"; // Path to your default image in `public/` folder
+import { useUser } from "@clerk/nextjs";
 
 export async function getCarouselImages() {
   let { data, error } = await supabase.storage
@@ -275,8 +273,10 @@ export async function createNewCustomer(
   lastName,
   email,
   phoneNumber,
-  addressId
+  addressId,
+  userId // Use the user ID from Clerk
 ) {
+
   const { data, error } = await supabase
     .from("customer")
     .insert([
@@ -286,6 +286,7 @@ export async function createNewCustomer(
         email,
         phone_number: phoneNumber,
         address_ids: [addressId],
+        clerk_user_id: userId, // Use the user ID from Clerk
       },
     ])
     .select("*")
@@ -299,8 +300,27 @@ export async function createNewCustomer(
   console.log("Created new customer:", data);
   return data;
 }
+export async function checkCustomerAccount(userId) {
+  if (!userId) {
+    console.error("No user ID provided");
+    return null;
+  }
 
+  const { data, error } = await supabase
+    .from("customer")
+    .select("*")
+    .eq("clerk_user_id", userId)
+    .maybeSingle(); // Use maybeSingle instead of single to handle null cases
+
+  if (error) {
+    console.error("Error checking customer account:", error);
+    return null;
+  }
+
+  return data;
+}
 export async function customerExist(email) {
+  console.log(email);
   let { data, error } = await supabase
     .from("customer")
     .select("id")
@@ -353,7 +373,6 @@ export async function getProductsSearch(searchQuery) {
   }
   return data; // Returns an array of product objects
 }
-
 
 export async function getCategoryBySlug(slug) {
   slug = "/" + slug; // Add '+' to the beginning of the slug
