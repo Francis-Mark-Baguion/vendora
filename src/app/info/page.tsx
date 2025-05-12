@@ -58,7 +58,16 @@ export default function CustomerInfoPage() {
         ...formData,
       });
 
-    const addressData = await createNewAddress(formData.address.landmark, formData.address.barangay, formData.address.city, formData.address.province, formData.address.country, formData.address.zipCode);
+    const addressData = await createNewAddress(
+      formData.firstName,
+      formData.phoneNumber,
+      formData.address.landmark,
+      formData.address.barangay,
+      formData.address.city,
+      formData.address.province,
+      formData.address.country,
+      formData.address.zipCode
+    );
       if (!addressData) {
         throw new Error("Failed to create customer data");
       }

@@ -65,6 +65,8 @@ export async function getCategories() {
   return data; // Returns an array of category objects
 }
 export async function createNewAddress(
+  full_name,
+  phone_number,
   landmark,
   barangay,
   city,
@@ -82,6 +84,9 @@ export async function createNewAddress(
         province,
         country,
         zip_code,
+        full_name,
+        phone_number,
+        is_default: true, // Set is_default to true
       },
     ])
     .select("*")

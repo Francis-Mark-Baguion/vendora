@@ -29,25 +29,6 @@ export default function Home() {
   const router = useRouter();
   const { currency, exchangeRate } = useContext(CurrencyContext);
 
-  async function checkAndRedirect() {
-    if (!isLoaded) return;
-
-    if (!user) {
-      redirectToSignIn();
-      return;
-    }
-
-    try {
-      const exists = await customerExist(
-        user.primaryEmailAddress?.emailAddress || ""
-      );
-      if (!exists) {
-        router.push("/info");
-      }
-    } catch (error) {
-      console.error("Error checking customer:", error);
-    }
-  }
 
   async function fetchCategories() {
     const data = await getCategories();
@@ -85,8 +66,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    checkAndRedirect();
-
     async function fetchData() {
       const images = await getCarouselImages();
       if (Array.isArray(images) && images.length > 0) {
@@ -260,7 +239,7 @@ export default function Home() {
                 </span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Best Selling Products
+                Featured Products
               </h2>
             </div>
             <Link
