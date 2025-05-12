@@ -83,13 +83,14 @@ interface PaymentMethod {
 
 const CheckoutPage = () => {
   const { user } = useUser();
+  const [isBuyNowFlow, setIsBuyNowFlow] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>("")
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
-    >(null);
-  
+  >(null);
+
   const [shippingFee, setShippingFee] = useState(0);
   const [loading, setLoading] = useState(true);
   const [processingOrder, setProcessingOrder] = useState(false);
@@ -166,11 +167,11 @@ const CheckoutPage = () => {
         .select("*")
         .eq("id", customerId)
         .single();
-  
+
       if (customerError || !customerData) {
         throw new Error("Customer not found");
       }
-  
+
       const addressesData: Address[] = [];
       for (const addressId of customerData.address_ids || []) {
         const { data: address, error } = await supabase
@@ -178,16 +179,16 @@ const CheckoutPage = () => {
           .select("*")
           .eq("id", addressId)
           .single();
-        
+
         if (!error && address) {
           addressesData.push(address);
         }
       }
-  
+
       setAddresses(addressesData);
-  
+
       // Set default address as selected
-      const defaultAddress = addressesData.find(addr => addr.is_default);
+      const defaultAddress = addressesData.find((addr) => addr.is_default);
       if (defaultAddress) {
         setSelectedAddressId(defaultAddress.id);
       } else if (addressesData.length > 0) {
@@ -235,8 +236,6 @@ const CheckoutPage = () => {
       // Set as default if it's the first address
       const isDefault = addresses.length === 0;
 
-
-
       const { data, error } = await supabase
         .from("address")
         .insert({
@@ -245,10 +244,13 @@ const CheckoutPage = () => {
         })
         .select()
         .single();
-      
-      await supabase.from("customer").update({
-        address_ids: [...(customerData.address_ids || []), data.id],
-      }).eq("id", customerData.id);
+
+      await supabase
+        .from("customer")
+        .update({
+          address_ids: [...(customerData.address_ids || []), data.id],
+        })
+        .eq("id", customerData.id);
 
       if (error) throw error;
 
@@ -260,7 +262,7 @@ const CheckoutPage = () => {
       // Reset form
       setNewAddress({
         full_name: "",
-       landmark: "",
+        landmark: "",
         barangay: "",
         city: "",
         province: "",
@@ -332,6 +334,22 @@ const CheckoutPage = () => {
         throw new Error("Customer not found");
       }
 
+      const orderItems = isBuyNowFlow
+        ? cartItems.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price_at_addition,
+            selected_color: item.selected_color,
+            selected_size: item.selected_size,
+          }))
+        : // For regular checkout, use all items
+          cartItems.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price_at_addition,
+            selected_color: item.selected_color,
+            selected_size: item.selected_size,
+          }));
       // Create order
       const { data: orderData, error: orderError } = await supabase
         .from("order")
@@ -349,36 +367,33 @@ const CheckoutPage = () => {
       if (orderError) throw orderError;
 
       // Create order items
-      const orderItems = cartItems.map((item) => ({
-        order_id: orderData.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price_at_addition,
-        selected_color: item.selected_color,
-        selected_size: item.selected_size,
-      }));
-
       const { error: orderItemsError } = await supabase
         .from("order_item")
-        .insert(orderItems);
+        .insert(
+          orderItems.map((item) => ({
+            ...item,
+            order_id: orderData.id,
+          }))
+        );
 
       if (orderItemsError) throw orderItemsError;
 
-      // Clear cart
-      const { error: clearCartError } = await supabase
-        .from("cart")
-        .delete()
-        .eq("customer_id", customerData.id);
+      // Clear cart only if this was a buy now flow
+      if (isBuyNowFlow) {
+        const { error: clearCartError } = await supabase
+          .from("cart")
+          .delete()
+          .eq("customer_id", customerData.id);
 
-      if (clearCartError) throw clearCartError;
+        if (clearCartError) throw clearCartError;
+      }
 
-      // Reset cart count
-      updateCartCount(0);
+      // Reset cart count if buy now flow
+      if (isBuyNowFlow) {
+        updateCartCount(0);
+      }
 
-      // Show success message
       toast.success("Order placed successfully!");
-
-      // Redirect to order confirmation
       window.location.href = `/orders/${orderData.id}/confirmation`;
     } catch (error) {
       console.error("Error placing order:", error);
@@ -389,6 +404,9 @@ const CheckoutPage = () => {
   };
 
   useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    setIsBuyNowFlow(queryParams.get("buy_now") === "true");
+
     const fetchData = async () => {
       if (!user?.id) return;
 
@@ -536,9 +554,7 @@ const CheckoutPage = () => {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="barangay">
-                            Barangay
-                          </Label>
+                          <Label htmlFor="barangay">Barangay</Label>
                           <Input
                             id="barangay"
                             value={newAddress.barangay}
@@ -731,9 +747,7 @@ const CheckoutPage = () => {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="barangay">
-                            Brangay
-                          </Label>
+                          <Label htmlFor="barangay">Brangay</Label>
                           <Input
                             id="barangay"
                             value={newAddress.barangay}
@@ -864,7 +878,15 @@ const CheckoutPage = () => {
                 ))}
               </RadioGroup>
 
-              <Button variant="outline" className="mt-4 w-full" onClick={() => toast.error("This app does not support adding new payment methods")}>
+              <Button
+                variant="outline"
+                className="mt-4 w-full"
+                onClick={() =>
+                  toast.error(
+                    "This app does not support adding new payment methods"
+                  )
+                }
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Payment Method
               </Button>
@@ -900,20 +922,24 @@ const CheckoutPage = () => {
                 <Accordion type="single" collapsible defaultValue="items">
                   <AccordionItem value="items">
                     <AccordionTrigger className="text-sm font-medium">
-                      {cartItems.length}{" "}
-                      {cartItems.length === 1 ? "item" : "items"}
+                      {isBuyNowFlow
+                        ? "1 item"
+                        : `${cartItems.length} ${
+                            cartItems.length === 1 ? "item" : "items"
+                          }`}
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-4 mt-2">
-                        {cartItems.map((item) => (
-                          <div key={item.id} className="flex gap-3">
+                        {isBuyNowFlow && cartItems.length > 1 ? (
+                          // In buy now flow but somehow got multiple items, show only first
+                          <div className="flex gap-3">
                             <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-gray-50">
                               <Image
                                 src={
-                                  item.product.image_url?.[0] ||
+                                  cartItems[0].product.image_url?.[0] ||
                                   "/placeholder-product.jpg"
                                 }
-                                alt={item.product.name}
+                                alt={cartItems[0].product.name}
                                 fill
                                 className="object-cover"
                                 sizes="64px"
@@ -921,28 +947,68 @@ const CheckoutPage = () => {
                             </div>
                             <div className="flex-1">
                               <h4 className="text-sm font-medium text-gray-900">
-                                {item.product.name}
+                                {cartItems[0].product.name}
                               </h4>
                               <p className="text-xs text-gray-500 mt-1">
-                                {hexColorMap[item.selected_color]}
-                                {item.selected_size &&
-                                  ` • ${item.selected_size}`}
+                                {hexColorMap[cartItems[0].selected_color]}
+                                {cartItems[0].selected_size &&
+                                  ` • ${cartItems[0].selected_size}`}
                               </p>
                               <div className="flex justify-between mt-1">
                                 <span className="text-xs text-gray-500">
-                                  Qty: {item.quantity}
+                                  Qty: {cartItems[0].quantity}
                                 </span>
                                 <span className="text-sm font-medium">
                                   {newFormatPrice(
-                                    getCurrentPrice(item.price_at_addition) *
-                                      item.quantity,
+                                    getCurrentPrice(
+                                      cartItems[0].price_at_addition
+                                    ) * cartItems[0].quantity,
                                     currency
                                   )}
                                 </span>
                               </div>
                             </div>
                           </div>
-                        ))}
+                        ) : (
+                          cartItems.map((item) => (
+                            <div key={item.id} className="flex gap-3">
+                              <div className="relative w-16 h-16 flex-shrink-0 rounded-md overflow-hidden bg-gray-50">
+                                <Image
+                                  src={
+                                    item.product.image_url?.[0] ||
+                                    "/placeholder-product.jpg"
+                                  }
+                                  alt={item.product.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="64px"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="text-sm font-medium text-gray-900">
+                                  {item.product.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {hexColorMap[item.selected_color]}
+                                  {item.selected_size &&
+                                    ` • ${item.selected_size}`}
+                                </p>
+                                <div className="flex justify-between mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    Qty: {item.quantity}
+                                  </span>
+                                  <span className="text-sm font-medium">
+                                    {newFormatPrice(
+                                      getCurrentPrice(item.price_at_addition) *
+                                        item.quantity,
+                                      currency
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

@@ -107,8 +107,42 @@ export default function Home() {
     }
   }, [slides]);
 
+  const LoadingState = () => {
+    return (
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12 mt-24 md:mt-12">
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+          <div className="relative w-24 h-24">
+            {/* Animated spinner */}
+            <div className="absolute inset-0 border-4 border-gray-200 border-t-red-500 rounded-full animate-spin"></div>
+            {/* Optional logo */}
+            <div className="absolute inset-4 flex items-center justify-center">
+              <svg
+                className="w-10 h-10 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeWidth="2"
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-xl font-medium text-gray-700">
+            Loading product...
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Just a moment while we prepare everything
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return <LoadingState />;
   }
 
   return (

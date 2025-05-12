@@ -235,7 +235,7 @@ const CartPage = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full md:w-1/2 mx-auto px-4 py-8">
+    <div className="max-w-7xl w-full md:w-1/2 mx-auto px-4 py-8 mt-24">
       {/* Cart Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Your Cart</h1>

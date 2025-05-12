@@ -19,8 +19,10 @@ import { get } from "http";
 import { supabase } from "@/lib/supabaseClient";
 import { useCart } from "@/context/CartContext";
 import Breadcrumbs from "@/components/breadcrumbs";
+import { Router } from "next/router";
 
 const ProductPage = () => {
+  const router = useRouter();
   const { id } = useParams();
   const { incrementCartCount, decrementCartCount, updateCartCount, cartCount } =
     useCart();
@@ -33,6 +35,7 @@ const ProductPage = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { user } = useUser();
   const [hasSize, setHasSize] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const { currency, exchangeRate } = useContext(CurrencyContext);
   const colorHexMap: { [key: string]: string } = {
@@ -448,15 +451,178 @@ const ProductPage = () => {
             </button>
 
             <button
-              onClick={() => {}}
-              disabled={!product.isInStock()}
-              className={`flex-1 px-6 py-3 rounded-md font-medium transition-colors ${
-                product.isInStock()
-                  ? "bg-black hover:bg-gray-800 text-white shadow-md hover:shadow-lg"
-                  : "bg-gray-200 cursor-not-allowed text-gray-500"
+              onClick={async () => {
+                if (!product) return;
+
+                if (hasSize && !selectedSize) {
+                  toast.error("Please select a size.");
+                  return;
+                }
+
+                if (quantity <= 0) {
+                  toast.error("Please select a quantity.");
+                  return;
+                }
+
+                // Set loading state
+                setIsProcessing(true);
+
+                try {
+                  const userData = await getCustomerByEmail(
+                    user?.emailAddresses[0].emailAddress || ""
+                  );
+                  if (!userData) {
+                    toast.error("User not found");
+                    setIsProcessing(false);
+                    return;
+                  }
+
+                  // First get current cart items
+                  const { data: cartData, error: cartError } = await supabase
+                    .from("cart")
+                    .select("*")
+                    .eq("customer_id", userData.id);
+
+                  if (cartError) {
+                    console.error("Error fetching cart items:", cartError);
+                    throw cartError;
+                  }
+
+                  // Calculate total quantity in current cart
+                  const currentCartQuantity =
+                    cartData?.reduce((sum, item) => sum + item.quantity, 0) ||
+                    0;
+
+                  // Clear existing cart if needed
+                  if (cartData && cartData.length > 0) {
+                    // Return stock for existing cart items
+                    for (const item of cartData) {
+                      // Get current product stock
+                      const { data: productData, error: productError } =
+                        await supabase
+                          .from("product")
+                          .select("stock_quantity")
+                          .eq("id", item.product_id)
+                          .single();
+
+                      if (productError || !productData) {
+                        console.error(
+                          `Error fetching product ${item.product_id}:`,
+                          productError
+                        );
+                        continue;
+                      }
+
+                      // Update product stock
+                      const { error: updateError } = await supabase
+                        .from("product")
+                        .update({
+                          stock_quantity:
+                            productData.stock_quantity + item.quantity,
+                        })
+                        .eq("id", item.product_id);
+
+                      if (updateError) {
+                        console.error(
+                          `Error updating product ${item.product_id}:`,
+                          updateError
+                        );
+                        continue;
+                      }
+
+                      // Delete cart item
+                      const { error: deleteError } = await supabase
+                        .from("cart")
+                        .delete()
+                        .eq("id", item.id);
+
+                      if (deleteError) {
+                        console.error(
+                          `Error deleting cart item ${item.id}:`,
+                          deleteError
+                        );
+                      }
+                    }
+
+                    // Update cart count (remove existing items)
+                    updateCartCount(cartCount - currentCartQuantity);
+                  }
+
+                  // Add the new product to cart
+                  const cartItem = {
+                    customer_id: userData.id,
+                    product_id: product.id,
+                    quantity: quantity,
+                    selected_color: selectedColor,
+                    selected_size: selectedSize,
+                    price_at_addition: product.price,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  };
+
+                  const { error: addError } = await supabase
+                    .from("cart")
+                    .insert(cartItem);
+
+                  if (addError) throw addError;
+
+                  // Update product stock for the new item
+                  await supabase
+                    .from("product")
+                    .update({
+                      stock_quantity: product.stock_quantity - quantity,
+                    })
+                    .eq("id", product.id);
+
+                  // Update cart count to reflect only the new item
+                  updateCartCount(quantity);
+
+                  // Redirect to checkout
+                  router.push("/cart/checkout?buy_now=true");
+                  
+                } catch (error) {
+                  console.error("Error proceeding to checkout:", error);
+                  toast.error("Failed to proceed to checkout");
+                } finally {
+                  setIsProcessing(false);
+                }
+              }}
+              disabled={!product.isInStock() || isProcessing}
+              className={`flex-1 px-6 py-3 rounded-md font-medium transition-all duration-300 ${
+                isProcessing
+                  ? "bg-gray-700 text-white cursor-wait" // Processing state
+                  : product.isInStock()
+                  ? "bg-black hover:bg-gray-800 text-white shadow-md hover:shadow-lg" // Normal state
+                  : "bg-gray-200 cursor-not-allowed text-gray-500" // Disabled state
               }`}
             >
-              Buy Now
+              {isProcessing ? (
+                <div className="flex items-center justify-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </div>
+              ) : (
+                "Buy Now"
+              )}
             </button>
           </div>
           {/* Additional Info */}

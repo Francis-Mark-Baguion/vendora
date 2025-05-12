@@ -349,6 +349,38 @@ export async function getProductsSearch(searchQuery) {
   return data; // Returns an array of product objects
 }
 
+
+export async function getCategoryBySlug(slug) {
+  slug = "/" + slug; // Add '+' to the beginning of the slug
+  const { data, error } = await supabase
+    .from("category")
+    .select("id, name, description")
+    .eq("link", slug)
+    .single();
+
+  console.log("Fetched category by slug:", data);
+
+  if (error) {
+    console.error("Error fetching category by slug:", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getProductsByCategory(categoryId) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("category_id", categoryId);
+
+  if (error) {
+    console.error("Error fetching products by category:", error);
+    return [];
+  }
+
+  return data;
+}
 export async function getAddressByCustomerId(customerId) {
   let { data, error } = await supabase
     .from("address")
