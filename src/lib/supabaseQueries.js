@@ -370,7 +370,7 @@ export async function getCategoryBySlug(slug) {
 
 export async function getProductsByCategory(categoryId) {
   const { data, error } = await supabase
-    .from("products")
+    .from("product")
     .select("*")
     .eq("category_id", categoryId);
 
