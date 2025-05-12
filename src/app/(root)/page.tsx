@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { customerExist } from "@/lib/supabaseQueries";
+import CategoryMenu from "@/components/ui/category-menu";
 import {
   getCarouselImages,
   getCategories,
@@ -150,7 +151,8 @@ export default function Home() {
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
           {/* Categories Section - Modern Sidebar */}
-          <div className="lg:sticky lg:top-6 lg:h-full lg:overflow-y-auto w-full lg:w-72 flex-shrink-0">
+          <CategoryMenu categories={categories} />
+          {/* <div className="lg:sticky lg:top-6 lg:h-full lg:overflow-y-auto w-full lg:w-72 flex-shrink-0">
             <div className="bg-white rounded-xl shadow-xs border border-gray-100 p-5 h-full">
               <h3 className="text-xl font-bold text-gray-900 mb-5 flex items-center">
                 <svg
@@ -186,7 +188,7 @@ export default function Home() {
                 ))}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Carousel Section - Hero Area */}
           <div className="flex-1">
