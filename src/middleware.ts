@@ -1,5 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { checkCustomerAccount, customerExist } from "@/lib/supabaseQueries";
+import {
+  checkCustomerAccount,
+  customerExist,
+  getCustomerByUserId,
+} from "@/lib/supabaseQueries";
 
 const protectedRoutes = [
   "/orders(.*)",
@@ -53,8 +57,12 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Check customer existence for protected routes
     try {
+      const customer = await getCustomerByUserId(userId);
+
+      console.log();
+
       const exists = await checkCustomerAccount(userId);
-      if (!exists) {
+      if (!exists && customer == null) {
         const url = req.nextUrl.clone();
         url.pathname = "/info";
         return Response.redirect(url);

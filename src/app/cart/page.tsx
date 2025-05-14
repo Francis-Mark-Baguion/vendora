@@ -72,7 +72,8 @@ const CartPage = () => {
         .select("id")
         .eq("email", user?.emailAddresses.at(0)?.emailAddress)
         .single();
-
+      console.log(user?.emailAddresses.at(0)?.emailAddress);
+      console.log("Customer data:", customerData);
       if (customerError || !customerData) {
         throw new Error("Customer not found");
       }

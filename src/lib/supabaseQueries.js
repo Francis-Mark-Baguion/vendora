@@ -268,6 +268,22 @@ export async function getCustomerByEmail(email) {
   return data; // Return the customer object
 }
 
+export async function getCustomerByUserId(userId) {
+  let { data, error } = await supabase
+    .from("customer")
+    .select("*")
+    .eq("clerk_user_id", userId) // Use the user ID from Clerk
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching customer:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched customer:", data);
+  return data; // Return the customer object
+}
+
 export async function createNewCustomer(
   firstName,
   lastName,
@@ -276,7 +292,11 @@ export async function createNewCustomer(
   addressId,
   userId // Use the user ID from Clerk
 ) {
-
+  const isExist = await checkCustomerAccount(userId); // Check if customer account exists
+  if (isExist) {
+    console.error("Customer account already exists for this user ID:", userId);
+    return null; // Return null if customer account already exists
+  }
   const { data, error } = await supabase
     .from("customer")
     .insert([
