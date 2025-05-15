@@ -360,6 +360,45 @@ export async function customerExist(email) {
   return !!data; // Returns true if customer exists, false otherwise
 }
 
+export async function emailExist(email) {
+  let { data, error } = await supabase
+    .from("customer")
+    .select("id")
+    .eq("email", email)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error checking email existence:", error);
+    return false; // Return false if an error occurs
+  }
+  console.log("Email exists:", data);
+  return !!data; // Returns true if email exists, false otherwise
+}
+
+export async function createCategory(categoryData) {
+  const { data, error } = await supabase
+    .from("category")
+    .insert([
+      {
+        name: categoryData.name,
+        description: categoryData.description,
+        link: "/" + categoryData.name.toLowerCase().replace(/\s+/g, "-"), // Create a slug from the name
+        image_url: categoryData.image_url,
+        has_size: categoryData.has_size,
+      },
+    ])
+    .select("*")
+    .single(); // return the inserted row as a single object
+
+  if (error) {
+    console.error("Error creating new category:", error.message);
+    return null;
+  }
+
+  console.log("Created new category:", data);
+  return data;
+}
+
 export async function getProducts() {
   let { data, error } = await supabase
     .from("product")

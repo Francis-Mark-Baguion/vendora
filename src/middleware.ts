@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import {
   checkCustomerAccount,
   customerExist,
+  emailExist,
   getCustomerByUserId,
 } from "@/lib/supabaseQueries";
 import { NextResponse } from "next/server";
@@ -66,8 +67,11 @@ export default clerkMiddleware(async (auth, req) => {
   // Handle root path specifically
   if (pathname === "/") {
     if (userId) {
+      const customer = await getCustomerByUserId(userId);
+      
+      const emailEx = await emailExist(customer.email);
       const exists = await checkCustomerAccount(userId);
-      if (!exists) {
+      if (!exists && !emailEx) {
         const url = req.nextUrl.clone();
         url.pathname = "/info";
         return NextResponse.redirect(url, {
@@ -88,9 +92,11 @@ export default clerkMiddleware(async (auth, req) => {
     // Check customer existence for protected routes
     try {
       const customer = await getCustomerByUserId(userId);
+      
+      const emailEx = await emailExist(customer.email);
       const exists = await checkCustomerAccount(userId);
 
-      if (!exists && customer == null) {
+      if (!exists && !emailEx) {
         const url = req.nextUrl.clone();
         url.pathname = "/info";
         return NextResponse.redirect(url, {
