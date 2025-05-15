@@ -457,3 +457,381 @@ export async function getProductById(productId) {
   console.log("Fetched product:", data);
   return data; // Return the product object
 }
+
+// Admin Dashboard Queries
+export async function getOrderStats(timeframe = "week") {
+  // Calculate date range based on timeframe
+  const now = new Date();
+  let fromDate = new Date();
+  
+  if (timeframe === "day") {
+    fromDate.setDate(now.getDate() - 1);
+  } else if (timeframe === "week") {
+    fromDate.setDate(now.getDate() - 7);
+  } else if (timeframe === "month") {
+    fromDate.setMonth(now.getMonth() - 1);
+  } else {
+    fromDate.setDate(now.getDate() - 7); // default to week
+  }
+
+  // Get order count
+  const { count } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", fromDate.toISOString());
+
+  // Get total revenue
+  const { data: revenueData } = await supabase
+    .from("orders")
+    .select("total_amount")
+    .gte("created_at", fromDate.toISOString())
+    .eq("status", "delivered");
+
+  const revenue = revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+
+  // Compare with previous period for trend
+  const prevFromDate = new Date(fromDate);
+  prevFromDate.setDate(fromDate.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
+  
+  const { count: prevCount } = await supabase
+    .from("orders")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", prevFromDate.toISOString())
+    .lte("created_at", fromDate.toISOString());
+
+  const { data: prevRevenueData } = await supabase
+    .from("orders")
+    .select("total_amount")
+    .gte("created_at", prevFromDate.toISOString())
+    .lte("created_at", fromDate.toISOString())
+    .eq("status", "delivered");
+
+  const prevRevenue = prevRevenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+
+  // Calculate trends
+  const countTrend = count && prevCount ? ((count - prevCount) / prevCount * 100) : 0;
+  const revenueTrend = revenue && prevRevenue ? ((revenue - prevRevenue) / prevRevenue * 100) : 0;
+
+  return {
+    count: count || 0,
+    revenue: revenue,
+    trend: countTrend >= 0 ? "up" : "down",
+    trendValue: `${Math.abs(Math.round(countTrend))}%`,
+    revenueTrend: revenueTrend >= 0 ? "up" : "down",
+    revenueTrendValue: `${Math.abs(Math.round(revenueTrend))}%`
+  };
+}
+
+export async function getProductStats() {
+  // Get total product count
+  const { count } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true });
+
+  // Get out of stock products
+  const { count: outOfStockCount } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .lte("stock_quantity", 0);
+
+  return {
+    count: count || 0,
+    outOfStock: outOfStockCount || 0,
+    // Note: For trends you'd need historical data to compare
+    trend: "up", // You'd calculate this based on your business logic
+    trendValue: "0%" // You'd calculate this based on your business logic
+  };
+}
+
+export async function getCustomerStats(timeframe = "week") {
+  // Calculate date range
+  const now = new Date();
+  let fromDate = new Date();
+  fromDate.setDate(now.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
+
+  // Get total customer count
+  const { count } = await supabase
+    .from("customers")
+    .select("*", { count: "exact", head: true });
+
+  // Get new customers in timeframe
+  const { count: newCustomers } = await supabase
+    .from("customers")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", fromDate.toISOString());
+
+  // Compare with previous period for trend
+  const prevFromDate = new Date(fromDate);
+  prevFromDate.setDate(fromDate.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
+  
+  const { count: prevNewCustomers } = await supabase
+    .from("customers")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", prevFromDate.toISOString())
+    .lte("created_at", fromDate.toISOString());
+
+  const trend = newCustomers && prevNewCustomers ? 
+    ((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
+
+  return {
+    count: count || 0,
+    new: newCustomers || 0,
+    trend: trend >= 0 ? "up" : "down",
+    trendValue: `${Math.abs(Math.round(trend))}%`
+  };
+}
+
+export async function getRecentOrders(limit = 5) {
+  const { data: orders, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      total_amount,
+      status,
+      created_at,
+      customer:customer_id (
+        first_name,
+        last_name
+      )
+    `)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching recent orders:", error);
+    return [];
+  }
+
+  return orders.map(order => ({
+    id: order.id,
+    customer_name: `${order.customer?.first_name} ${order.customer?.last_name}`,
+    created_at: order.created_at,
+    total_amount: order.total_amount,
+    status: order.status
+  }));
+}
+
+// Admin Products Queries
+export async function deleteProduct(id) {
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting product:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// Admin Categories Queries
+export async function deleteCategory(id) {
+  // First check if any products are using this category
+  const { count } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("category_id", id);
+
+  if (count && count > 0) {
+    return { 
+      success: false, 
+      error: "Cannot delete category with associated products" 
+    };
+  }
+
+  const { error } = await supabase
+    .from("categories")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting category:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// Admin Orders Queries
+export async function getOrders() {
+  const { data: orders, error } = await supabase
+    .from("order")
+    .select(`
+      id,
+      total_amount,
+      status,
+      created_at,
+      updated_at,
+      payment_method,
+      customer:customer_id (
+        first_name,
+        last_name,
+        email
+      )
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching orders:", error);
+    return [];
+  }
+
+  const ordersWithItems = await Promise.all(
+    orders.map(async (order) => {
+      const { count, error: itemsError } = await supabase
+        .from("order_item")
+        .select("*", { count: "exact", head: true })
+        .eq("order_id", order.id);
+
+      if (itemsError) {
+        console.error(
+          `Error counting items for order ${order.id}:`,
+          itemsError
+        );
+        return { ...order, items_count: 0 };
+      }
+
+      return { ...order, items_count: count || 0 };
+    })
+  );
+
+  return ordersWithItems.map((order) => ({
+    id: order.id,
+    customer_name: `${order.customer?.first_name} ${order.customer?.last_name}`,
+    customer_email: order.customer?.email,
+    created_at: order.created_at,
+    updated_at: order.updated_at,
+    total_amount: order.total_amount,
+    status: order.status,
+    items_count: order.items_count,
+    payment_method: order.payment_method,
+  }));
+}
+
+export async function getCategoryByName(name) {
+  const { data, error } = await supabase
+    .from("category")
+    .select("*")
+    .eq("name", name)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching category by name:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched category by name:", data);
+  return data; // Return the category object
+}
+
+export async function createProduct(
+  product
+) {
+  const cat = await getCategory(product.category_id);
+  const { data, error } = await supabase
+    .from("product")
+    .insert([
+      {
+        
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock_quantity: product.stock_quantity,
+        category_id: product.category_id,
+        image_url: product.image_url,
+        rating: product.rating,
+        is_featured: product.is_featured,
+        available_colors: product.available_colors,
+        available_sizes: product.available_sizes,
+        category_id: cat.id,
+
+
+      },
+    ])
+    .select("*")
+    .single(); // return the inserted row as a single object
+
+  if (error) {
+    console.error("Error creating new product:", error.message);
+    return null;
+  }
+
+  console.log("Created new product:", data);
+  return data;
+}
+
+
+export async function getDefaultAddress(customerId) {
+  const { data, error } = await supabase
+    .from("address")
+    .select("*")
+    .eq("customer_id", customerId)
+    .eq("is_default", true)
+    .single(); // Fetch a single row
+
+  if (error) {
+    console.error("Error fetching default address:", error);
+    return null; // Return null if an error occurs
+  }
+
+  console.log("Fetched default address:", data);
+  return data; // Return the default address object
+}
+
+// Admin Customers Queries
+export async function getCustomers() {
+  const { data: customers, error } = await supabase
+    .from("customer")
+    .select(`
+      id,
+      first_name,
+      last_name,
+      email,
+      phone_number,
+      created_at,
+      address_ids
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching customers:", error);
+    return [];
+  }
+
+
+  // Get order stats for each customer
+  const customersWithStats = await Promise.all(
+    customers.map(async customer => {
+      const { count: ordersCount } = await supabase
+        .from("order")
+        .select("*", { count: "exact", head: true })
+        .eq("customer_id", customer.id);
+
+      const { data: ordersData } = await supabase
+        .from("order")
+        .select("total_amount")
+        .eq("customer_id", customer.id)
+        .eq("status", "delivered");
+
+      const totalSpent = ordersData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      
+      const defaultAddress = await getDefaultAddress(customer.id);
+      return {
+        id: customer.id,
+        name: `${customer.first_name} ${customer.last_name}`,
+        email: customer.email,
+        phone: customer.phone_number,
+        address: defaultAddress
+          ? `${defaultAddress.barangay}, ${defaultAddress.city}, ${defaultAddress.province} ${defaultAddress.zip_code}`
+          : undefined,
+        created_at: customer.created_at,
+        orders_count: ordersCount || 0,
+        total_spent: totalSpent,
+      };
+    })
+  );
+
+  return customersWithStats;
+}

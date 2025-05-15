@@ -31,7 +31,8 @@
     "src/app/(root)/page.js",
     "src/components/breadcrumbs.js",
     "src/app/cart/checkout/page.js",
-    "src/components/ui/category-menu.js"
+    "src/components/ui/category-menu.js",
+    "src/app/admin/products/new/page.js"
   ],
   "exclude": ["node_modules"]
 }
