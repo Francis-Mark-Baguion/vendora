@@ -506,7 +506,7 @@ export async function getOrderStats(timeframe = "week") {
   // Calculate date range based on timeframe
   const now = new Date();
   let fromDate = new Date();
-  
+
   if (timeframe === "day") {
     fromDate.setDate(now.getDate() - 1);
   } else if (timeframe === "week") {
@@ -519,41 +519,48 @@ export async function getOrderStats(timeframe = "week") {
 
   // Get order count
   const { count } = await supabase
-    .from("orders")
+    .from("order")
     .select("*", { count: "exact", head: true })
     .gte("created_at", fromDate.toISOString());
 
   // Get total revenue
   const { data: revenueData } = await supabase
-    .from("orders")
+    .from("order")
     .select("total_amount")
     .gte("created_at", fromDate.toISOString())
     .eq("status", "delivered");
 
-  const revenue = revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+  const revenue =
+    revenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
 
   // Compare with previous period for trend
   const prevFromDate = new Date(fromDate);
-  prevFromDate.setDate(fromDate.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
-  
+  prevFromDate.setDate(
+    fromDate.getDate() -
+      (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30)
+  );
+
   const { count: prevCount } = await supabase
-    .from("orders")
+    .from("order")
     .select("*", { count: "exact", head: true })
     .gte("created_at", prevFromDate.toISOString())
     .lte("created_at", fromDate.toISOString());
 
   const { data: prevRevenueData } = await supabase
-    .from("orders")
+    .from("order")
     .select("total_amount")
     .gte("created_at", prevFromDate.toISOString())
     .lte("created_at", fromDate.toISOString())
     .eq("status", "delivered");
 
-  const prevRevenue = prevRevenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+  const prevRevenue =
+    prevRevenueData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
 
   // Calculate trends
-  const countTrend = count && prevCount ? ((count - prevCount) / prevCount * 100) : 0;
-  const revenueTrend = revenue && prevRevenue ? ((revenue - prevRevenue) / prevRevenue * 100) : 0;
+  const countTrend =
+    count && prevCount ? ((count - prevCount) / prevCount) * 100 : 0;
+  const revenueTrend =
+    revenue && prevRevenue ? ((revenue - prevRevenue) / prevRevenue) * 100 : 0;
 
   return {
     count: count || 0,
@@ -561,7 +568,7 @@ export async function getOrderStats(timeframe = "week") {
     trend: countTrend >= 0 ? "up" : "down",
     trendValue: `${Math.abs(Math.round(countTrend))}%`,
     revenueTrend: revenueTrend >= 0 ? "up" : "down",
-    revenueTrendValue: `${Math.abs(Math.round(revenueTrend))}%`
+    revenueTrendValue: `${Math.abs(Math.round(revenueTrend))}%`,
   };
 }
 
@@ -582,7 +589,7 @@ export async function getProductStats() {
     outOfStock: outOfStockCount || 0,
     // Note: For trends you'd need historical data to compare
     trend: "up", // You'd calculate this based on your business logic
-    trendValue: "0%" // You'd calculate this based on your business logic
+    trendValue: "0%", // You'd calculate this based on your business logic
   };
 }
 
@@ -590,7 +597,9 @@ export async function getCustomerStats(timeframe = "week") {
   // Calculate date range
   const now = new Date();
   let fromDate = new Date();
-  fromDate.setDate(now.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
+  fromDate.setDate(
+    now.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30)
+  );
 
   // Get total customer count
   const { count } = await supabase
@@ -605,29 +614,35 @@ export async function getCustomerStats(timeframe = "week") {
 
   // Compare with previous period for trend
   const prevFromDate = new Date(fromDate);
-  prevFromDate.setDate(fromDate.getDate() - (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30));
-  
+  prevFromDate.setDate(
+    fromDate.getDate() -
+      (timeframe === "day" ? 1 : timeframe === "week" ? 7 : 30)
+  );
+
   const { count: prevNewCustomers } = await supabase
     .from("customers")
     .select("*", { count: "exact", head: true })
     .gte("created_at", prevFromDate.toISOString())
     .lte("created_at", fromDate.toISOString());
 
-  const trend = newCustomers && prevNewCustomers ? 
-    ((newCustomers - prevNewCustomers) / prevNewCustomers * 100) : 0;
+  const trend =
+    newCustomers && prevNewCustomers
+      ? ((newCustomers - prevNewCustomers) / prevNewCustomers) * 100
+      : 0;
 
   return {
     count: count || 0,
     new: newCustomers || 0,
     trend: trend >= 0 ? "up" : "down",
-    trendValue: `${Math.abs(Math.round(trend))}%`
+    trendValue: `${Math.abs(Math.round(trend))}%`,
   };
 }
 
 export async function getRecentOrders(limit = 5) {
   const { data: orders, error } = await supabase
-    .from("orders")
-    .select(`
+    .from("order")
+    .select(
+      `
       id,
       total_amount,
       status,
@@ -636,7 +651,8 @@ export async function getRecentOrders(limit = 5) {
         first_name,
         last_name
       )
-    `)
+    `
+    )
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -645,21 +661,18 @@ export async function getRecentOrders(limit = 5) {
     return [];
   }
 
-  return orders.map(order => ({
+  return orders.map((order) => ({
     id: order.id,
     customer_name: `${order.customer?.first_name} ${order.customer?.last_name}`,
     created_at: order.created_at,
     total_amount: order.total_amount,
-    status: order.status
+    status: order.status,
   }));
 }
 
 // Admin Products Queries
 export async function deleteProduct(id) {
-  const { error } = await supabase
-    .from("products")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("products").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting product:", error);
@@ -678,16 +691,13 @@ export async function deleteCategory(id) {
     .eq("category_id", id);
 
   if (count && count > 0) {
-    return { 
-      success: false, 
-      error: "Cannot delete category with associated products" 
+    return {
+      success: false,
+      error: "Cannot delete category with associated products",
     };
   }
 
-  const { error } = await supabase
-    .from("categories")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("categories").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting category:", error);
@@ -701,7 +711,8 @@ export async function deleteCategory(id) {
 export async function getOrders() {
   const { data: orders, error } = await supabase
     .from("order")
-    .select(`
+    .select(
+      `
       id,
       total_amount,
       status,
@@ -713,7 +724,8 @@ export async function getOrders() {
         last_name,
         email
       )
-    `)
+    `
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -769,15 +781,12 @@ export async function getCategoryByName(name) {
   return data; // Return the category object
 }
 
-export async function createProduct(
-  product
-) {
+export async function createProduct(product) {
   const cat = await getCategory(product.category_id);
   const { data, error } = await supabase
     .from("product")
     .insert([
       {
-        
         name: product.name,
         description: product.description,
         price: product.price,
@@ -789,8 +798,6 @@ export async function createProduct(
         available_colors: product.available_colors,
         available_sizes: product.available_sizes,
         category_id: cat.id,
-
-
       },
     ])
     .select("*")
@@ -804,7 +811,6 @@ export async function createProduct(
   console.log("Created new product:", data);
   return data;
 }
-
 
 export async function getDefaultAddress(customerId) {
   const { data, error } = await supabase
@@ -827,7 +833,8 @@ export async function getDefaultAddress(customerId) {
 export async function getCustomers() {
   const { data: customers, error } = await supabase
     .from("customer")
-    .select(`
+    .select(
+      `
       id,
       first_name,
       last_name,
@@ -835,7 +842,8 @@ export async function getCustomers() {
       phone_number,
       created_at,
       address_ids
-    `)
+    `
+    )
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -843,10 +851,9 @@ export async function getCustomers() {
     return [];
   }
 
-
   // Get order stats for each customer
   const customersWithStats = await Promise.all(
-    customers.map(async customer => {
+    customers.map(async (customer) => {
       const { count: ordersCount } = await supabase
         .from("order")
         .select("*", { count: "exact", head: true })
@@ -858,8 +865,9 @@ export async function getCustomers() {
         .eq("customer_id", customer.id)
         .eq("status", "delivered");
 
-      const totalSpent = ordersData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
-      
+      const totalSpent =
+        ordersData?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+
       const defaultAddress = await getDefaultAddress(customer.id);
       return {
         id: customer.id,
@@ -877,4 +885,45 @@ export async function getCustomers() {
   );
 
   return customersWithStats;
+}
+
+export async function updateProductStock(productId, newStock) {
+  // This is a mock implementation
+  // In a real app, you would update the product stock in your database
+
+  console.log(`Updating stock for product ${productId} to ${newStock}`);
+
+  const { data, error } = await supabase
+    .from("product")
+    .update({ stock_quantity: newStock })
+    .eq("id", productId)
+    .select("*")
+    .single(); // return the updated row as a single object
+
+  return data;
+}
+
+// Bulk update stock for multiple products
+export async function bulkUpdateStock(updates) {
+  // This is a mock implementation
+  // In a real app, you would update multiple products in your database
+
+  console.log(`Bulk updating stock for ${updates.length} products:`, updates);
+
+  for (var i = 0; i < updates.length; i++) {
+    const { productId, newStock } = updates[i];
+    const { data, error } = await supabase
+      .from("product")
+      .update({ stock_quantity: newStock })
+      .eq("id", productId)
+      .select("*")
+      .single(); // return the updated row as a single object
+
+    if (error) {
+      console.error(`Error updating stock for product ${productId}:`, error);
+    } else {
+      console.log(`Updated stock for product ${productId}:`, data);
+    }
+  }
+  return updates;
 }

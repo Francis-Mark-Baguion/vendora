@@ -175,7 +175,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 md:mt-18 mt-12 max-w-7xl mx-auto">
+    <div className="max-h-7xl bg-gray-50 md:mt-18 mt-12 max-w-7xl mx-auto">
       {/* Mobile sidebar */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
         <SheetTrigger asChild>
@@ -319,7 +319,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
 function AdminSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 flex ">
+    <div className="min-h-7xl min-w-7xl bg-gray-50 flex max-w-7xl mx-auto">
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
           <div className="h-16 flex items-center justify-center border-b border-gray-200">

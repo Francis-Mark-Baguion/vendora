@@ -33,7 +33,9 @@
     "src/app/cart/checkout/page.js",
     "src/components/ui/category-menu.js",
     "src/app/admin/products/new/page.js",
-    "src/app/admin/categories/new/page.js"
+    "src/app/admin/categories/new/page.js",
+    "src/components/ui/navbar.js",
+    "src/app/admin/products/inventory/page.js"
   ],
   "exclude": ["node_modules"]
 }

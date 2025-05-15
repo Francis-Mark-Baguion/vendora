@@ -96,7 +96,7 @@ export default clerkMiddleware(async (auth, req) => {
       const emailEx = await emailExist(customer.email);
       const exists = await checkCustomerAccount(userId);
 
-      if (!exists && !emailEx) {
+      if (!exists && !emailEx && pathname !== "/info") {
         const url = req.nextUrl.clone();
         url.pathname = "/info";
         return NextResponse.redirect(url, {
