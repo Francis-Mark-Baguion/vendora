@@ -332,11 +332,15 @@ export async function checkCustomerAccount(userId) {
     .eq("clerk_user_id", userId)
     .maybeSingle(); // Use maybeSingle instead of single to handle null cases
 
+   
   if (error) {
     console.error("Error checking customer account:", error);
     return null;
   }
-
+  if (data === null) {
+    console.log("No customer account found for user ID:", userId);
+    return null; // Return null if no customer account is found
+  }
   return data;
 }
 export async function customerExist(email) {
