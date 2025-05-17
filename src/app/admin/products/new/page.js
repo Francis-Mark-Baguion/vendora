@@ -171,9 +171,17 @@ export default function NewProductPage() {
         stock_quantity: data.stock_quantity,
         category_id: data.category_id,
         is_featured: data.is_featured,
-        image_url: imageUrl,
-        available_colors: data.available_colors?.split(",").map((c) => c.trim()).filter(Boolean) || [],
-        available_sizes: data.available_sizes?.split(",").map((s) => s.trim()).filter(Boolean) || [],
+        image_url: [imageUrl],
+        available_colors:
+          data.available_colors
+            ?.split(",")
+            .map((c) => c.trim())
+            .filter(Boolean) || [],
+        available_sizes:
+          data.available_sizes
+            ?.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean) || [],
       };
 
       await createProduct(productData);
