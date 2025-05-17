@@ -18,7 +18,7 @@ import { CurrencyContext } from "@/context/CurrencyContext";
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<string[]>(["/default.jpg"]);
+  const [slides, setSlides] = useState<string[]>(["/default.svg"]);
   const [categories, setCategories] = useState<
     { name: string; link: string }[]
   >([]);
