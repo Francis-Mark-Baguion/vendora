@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   ShoppingBag,
   Users,
@@ -31,6 +31,8 @@ import {
   getProductStats,
   getCustomerStats,
 } from "@/lib/supabaseQueries";
+
+import { CurrencyContext } from "@/context/CurrencyContext";
 
 interface StatsCardProps {
   title: string;
@@ -142,6 +144,7 @@ const RecentOrder = ({
 };
 
 export default function AdminDashboard() {
+  const { currency, exchangeRate } = useContext(CurrencyContext);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState("week");
   const [orderStats, setOrderStats] = useState({
@@ -178,7 +181,9 @@ export default function AdminDashboard() {
           setOrderStats({
             total: orders.count || 0,
             revenue: orders.revenue || 0,
-            trend: (["up", "down", "neutral"].includes(orders.trend) ? orders.trend : "neutral") as "up" | "down" | "neutral",
+            trend: (["up", "down", "neutral"].includes(orders.trend)
+              ? orders.trend
+              : "neutral") as "up" | "down" | "neutral",
             trendValue: orders.trendValue || "0%",
           });
         }
@@ -187,7 +192,9 @@ export default function AdminDashboard() {
           setProductStats({
             total: products.count || 0,
             outOfStock: products.outOfStock || 0,
-            trend: (["up", "down", "neutral"].includes(products.trend) ? products.trend : "neutral") as "up" | "down" | "neutral",
+            trend: (["up", "down", "neutral"].includes(products.trend)
+              ? products.trend
+              : "neutral") as "up" | "down" | "neutral",
             trendValue: products.trendValue || "0%",
           });
         }
@@ -196,7 +203,9 @@ export default function AdminDashboard() {
           setCustomerStats({
             total: customers.count || 0,
             new: customers.new || 0,
-            trend: (["up", "down", "neutral"].includes(customers.trend) ? customers.trend : "neutral") as "up" | "down" | "neutral",
+            trend: (["up", "down", "neutral"].includes(customers.trend)
+              ? customers.trend
+              : "neutral") as "up" | "down" | "neutral",
             trendValue: customers.trendValue || "0%",
           });
         }
@@ -220,7 +229,6 @@ export default function AdminDashboard() {
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <Tabs value={timeframe} onValueChange={setTimeframe} className="w-auto">
           <TabsList>
-            <TabsTrigger value="day">Today</TabsTrigger>
             <TabsTrigger value="week">This Week</TabsTrigger>
             <TabsTrigger value="month">This Month</TabsTrigger>
             <TabsTrigger value="year">This Year</TabsTrigger>
@@ -241,9 +249,19 @@ export default function AdminDashboard() {
         />
         <StatsCard
           title="Revenue"
-          value={loading ? "..." : `$${orderStats.revenue.toFixed(2)}`}
+          value={
+        loading
+          ? "..."
+          : `${currency} ${(orderStats.revenue * exchangeRate).toFixed(2)}`
+          }
           description="from previous period"
-          icon={<DollarSign className="h-5 w-5" />}
+          icon={
+        currency === "USD" ? (
+          <DollarSign className="h-5 w-5" />
+        ) : (
+          <CreditCard className="h-5 w-5" />
+        )
+          }
           trend={orderStats.trend}
           trendValue={orderStats.trendValue}
           loading={loading}
@@ -251,9 +269,9 @@ export default function AdminDashboard() {
         <StatsCard
           title="Products"
           value={
-            loading
-              ? "..."
-              : `${productStats.total} (${productStats.outOfStock} out of stock)`
+        loading
+          ? "..."
+          : `${productStats.total} (${productStats.outOfStock} out of stock)`
           }
           description="total products"
           icon={<ShoppingBag className="h-5 w-5" />}
@@ -262,9 +280,9 @@ export default function AdminDashboard() {
         <StatsCard
           title="Customers"
           value={
-            loading
-              ? "..."
-              : `${customerStats.total} (${customerStats.new} new)`
+        loading
+          ? "..."
+          : `${customerStats.total} (${customerStats.new} new)`
           }
           description="from previous period"
           icon={<Users className="h-5 w-5" />}
@@ -315,7 +333,9 @@ export default function AdminDashboard() {
                     id={order.id}
                     customer={order.customer_name || "Customer"}
                     date={new Date(order.created_at).toLocaleDateString()}
-                    amount={`$${order.total_amount.toFixed(2)}`}
+                    amount={`${currency} ${(
+                      order.total_amount * exchangeRate
+                    ).toFixed(2)}`}
                     status={order.status}
                   />
                 ))}

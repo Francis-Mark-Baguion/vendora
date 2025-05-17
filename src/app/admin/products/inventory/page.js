@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -52,6 +52,7 @@ import {
   bulkUpdateStock,
 } from "@/lib/supabaseQueries";
 
+import { CurrencyContext } from "@/context/CurrencyContext";
 function ShoppingBag(props) {
   return (
     <svg
@@ -75,6 +76,8 @@ function ShoppingBag(props) {
 
 export default function InventoryPage() {
   const router = useRouter();
+
+  const { currency, exchangeRate } = useContext(CurrencyContext);
   const searchParams = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,9 +94,29 @@ export default function InventoryPage() {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [stockChanges, setStockChanges] = useState({});
   const [bulkUpdateAmount, setBulkUpdateAmount] = useState(0);
-
+  const [currencySymbol, setCurrencySymbol] = useState("$");
+  const handleCurrencyChange = (newCurrency) => {
+    // Update the currency in the context
+    switch (newCurrency) {
+      case "USD":
+        setCurrencySymbol("$");
+        break;
+      case "EUR":
+        setCurrencySymbol("€");
+        break;
+      case "PHP":
+        setCurrencySymbol("₱");
+        break;
+      default:
+        setCurrencySymbol("$");
+    }
+  };
   const itemsPerPage = 10;
-
+  useEffect(() => {
+    // Re-fetch products when currency or exchange rate changes
+    handleCurrencyChange(currency);
+    fetchProducts();
+  }, [currency, exchangeRate]);
   useEffect(() => {
     // Get query parameters
     const query = searchParams.get("q") || "";
@@ -899,7 +922,10 @@ export default function InventoryPage() {
                         {categories.find((c) => c.id === product.category_id)
                           ?.name || `Category ${product.category_id}`}
                       </TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {currencySymbol}{" "}
+                        {(product.price * exchangeRate).toFixed(2)}
+                      </TableCell>
                       <TableCell>
                         {editMode ? (
                           <div className="flex items-center space-x-1">

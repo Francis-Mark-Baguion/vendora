@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useState, useEffect, useContext } from "react";
+import Link from "next/link";
 import {
   Search,
   Filter,
@@ -15,19 +15,32 @@ import {
   Truck,
   Package,
   XCircle,
-} from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+} from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Pagination,
   PaginationContent,
@@ -35,118 +48,148 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { getOrders } from "@/lib/supabaseQueries"
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { getOrders } from "@/lib/supabaseQueries";
 
+import { CurrencyContext } from "@/context/CurrencyContext";
 interface Order {
-  id: string
-  customer_name: string
-  customer_email: string
-  total_amount: number
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
-  created_at: string
-  updated_at: string
-  items_count: number
-  payment_method: string
+  id: string;
+  customer_name: string;
+  customer_email: string;
+  total_amount: number;
+  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  items_count: number;
+  payment_method: string;
 }
 
 export default function OrdersPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [sortField, setSortField] = useState("created_at")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const router = useRouter();
+  const { currency, exchangeRate } = useContext(CurrencyContext);
+  const searchParams = useSearchParams();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState("created_at");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currencySymbol, setCurrencySymbol] = useState("$");
 
-  const itemsPerPage = 10
-
+  const itemsPerPage = 10;
+  const handleCurrencyChange = (newCurrency: string) => {
+    // Update the currency in the context
+    switch (newCurrency) {
+      case "USD":
+        setCurrencySymbol("$");
+        break;
+      case "EUR":
+        setCurrencySymbol("€");
+        break;
+      case "PHP":
+        setCurrencySymbol("₱");
+        break;
+      default:
+        setCurrencySymbol("$");
+    }
+  };
+  useEffect(() => {
+    // Re-fetch products when currency or exchange rate changes
+    handleCurrencyChange(currency);
+    fetchOrders();
+  }, [currency, exchangeRate]);
   useEffect(() => {
     // Get query parameters
-    const query = searchParams.get("q") || ""
-    const status = searchParams.get("status") || "all"
-    const sort = searchParams.get("sort") || "created_at"
-    const direction = searchParams.get("direction") || "desc"
-    const page = Number.parseInt(searchParams.get("page") || "1")
+    const query = searchParams.get("q") || "";
+    const status = searchParams.get("status") || "all";
+    const sort = searchParams.get("sort") || "created_at";
+    const direction = searchParams.get("direction") || "desc";
+    const page = Number.parseInt(searchParams.get("page") || "1");
 
     // Set state from URL parameters
-    setSearchQuery(query)
-    setStatusFilter(status)
-    setSortField(sort)
-    setSortDirection(direction as "asc" | "desc")
-    setCurrentPage(page)
+    setSearchQuery(query);
+    setStatusFilter(status);
+    setSortField(sort);
+    setSortDirection(direction as "asc" | "desc");
+    setCurrentPage(page);
 
-    fetchOrders(query, status, sort, direction as "asc" || "desc", page)
-  }, [searchParams])
+    fetchOrders(query, status, sort, (direction as "asc") || "desc", page);
+  }, [searchParams]);
 
   async function fetchOrders(
     query = searchQuery,
     status = statusFilter,
     sort = sortField,
     direction = sortDirection,
-    page = currentPage,
+    page = currentPage
   ) {
-    setLoading(true)
+    setLoading(true);
     try {
       // In a real app, you would pass these parameters to your API
-      const data = await getOrders()
+      const data = await getOrders();
 
       if (Array.isArray(data) && data.length > 0) {
         // Filter orders
-        let filteredOrders = [...data]
+        let filteredOrders = [...data];
 
         if (query) {
           filteredOrders = filteredOrders.filter(
             (order) =>
               order.id.toLowerCase().includes(query.toLowerCase()) ||
               order.customer_name.toLowerCase().includes(query.toLowerCase()) ||
-              order.customer_email.toLowerCase().includes(query.toLowerCase()),
-          )
+              order.customer_email.toLowerCase().includes(query.toLowerCase())
+          );
         }
 
         if (status !== "all") {
-          filteredOrders = filteredOrders.filter((order) => order.status === status)
+          filteredOrders = filteredOrders.filter(
+            (order) => order.status === status
+          );
         }
 
         // Sort orders
         filteredOrders.sort((a, b) => {
-          let aValue = a[sort as keyof typeof a]
-          let bValue = b[sort as keyof typeof b]
+          let aValue = a[sort as keyof typeof a];
+          let bValue = b[sort as keyof typeof b];
 
           if (sort === "created_at" || sort === "updated_at") {
             return direction === "asc"
-              ? new Date(aValue as string).getTime() - new Date(bValue as string).getTime()
-              : new Date(bValue as string).getTime() - new Date(aValue as string).getTime()
+              ? new Date(aValue as string).getTime() -
+                  new Date(bValue as string).getTime()
+              : new Date(bValue as string).getTime() -
+                  new Date(aValue as string).getTime();
           }
 
           if (typeof aValue === "string") {
-            aValue = aValue.toLowerCase()
-            bValue = (bValue as string).toLowerCase()
+            aValue = aValue.toLowerCase();
+            bValue = (bValue as string).toLowerCase();
           }
 
-          if (aValue < bValue) return direction === "asc" ? -1 : 1
-          if (aValue > bValue) return direction === "asc" ? 1 : -1
-          return 0
-        })
+          if (aValue < bValue) return direction === "asc" ? -1 : 1;
+          if (aValue > bValue) return direction === "asc" ? 1 : -1;
+          return 0;
+        });
 
         // Pagination
-        const totalItems = filteredOrders.length
-        setTotalPages(Math.ceil(totalItems / itemsPerPage))
+        const totalItems = filteredOrders.length;
+        setTotalPages(Math.ceil(totalItems / itemsPerPage));
 
-        const startIndex = (page - 1) * itemsPerPage
-        const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage)
+        const startIndex = (page - 1) * itemsPerPage;
+        const paginatedOrders = filteredOrders.slice(
+          startIndex,
+          startIndex + itemsPerPage
+        );
 
-        setOrders(paginatedOrders)
+        setOrders(paginatedOrders);
       }
     } catch (error) {
-      console.error("Error fetching orders:", error)
+      console.error("Error fetching orders:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -154,85 +197,86 @@ export default function OrdersPage() {
     updateUrlAndFetch({
       q: searchQuery,
       page: "1", // Reset to first page on new search
-    })
-  }
+    });
+  };
 
   const handleStatusChange = (value: string) => {
-    setStatusFilter(value)
+    setStatusFilter(value);
     updateUrlAndFetch({
       status: value,
       page: "1", // Reset to first page on filter change
-    })
-  }
+    });
+  };
 
   const handleSort = (field: string) => {
-    const direction = field === sortField && sortDirection === "asc" ? "desc" : "asc"
-    setSortField(field)
-    setSortDirection(direction)
+    const direction =
+      field === sortField && sortDirection === "asc" ? "desc" : "asc";
+    setSortField(field);
+    setSortDirection(direction);
     updateUrlAndFetch({
       sort: field,
       direction,
-    })
-  }
+    });
+  };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
+    setCurrentPage(page);
     updateUrlAndFetch({
       page: page.toString(),
-    })
-  }
+    });
+  };
 
   const updateUrlAndFetch = (params: Record<string, string>) => {
-    const url = new URL(window.location.href)
+    const url = new URL(window.location.href);
 
     // Update search params
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
-        url.searchParams.set(key, value)
+        url.searchParams.set(key, value);
       } else {
-        url.searchParams.delete(key)
+        url.searchParams.delete(key);
       }
-    })
+    });
 
     // Preserve existing params that aren't being updated
     if (!params.hasOwnProperty("q") && searchQuery) {
-      url.searchParams.set("q", searchQuery)
+      url.searchParams.set("q", searchQuery);
     }
 
     if (!params.hasOwnProperty("status") && statusFilter !== "all") {
-      url.searchParams.set("status", statusFilter)
+      url.searchParams.set("status", statusFilter);
     }
 
     if (!params.hasOwnProperty("sort") && sortField !== "created_at") {
-      url.searchParams.set("sort", sortField)
+      url.searchParams.set("sort", sortField);
     }
 
     if (!params.hasOwnProperty("direction") && sortDirection !== "desc") {
-      url.searchParams.set("direction", sortDirection)
+      url.searchParams.set("direction", sortDirection);
     }
 
     if (!params.hasOwnProperty("page") && currentPage !== 1) {
-      url.searchParams.set("page", currentPage.toString())
+      url.searchParams.set("page", currentPage.toString());
     }
 
     // Update URL without reloading the page
-    router.push(url.pathname + url.search)
-  }
+    router.push(url.pathname + url.search);
+  };
 
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
       case "pending":
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
       case "processing":
-        return <Package className="h-4 w-4" />
+        return <Package className="h-4 w-4" />;
       case "shipped":
-        return <Truck className="h-4 w-4" />
+        return <Truck className="h-4 w-4" />;
       case "delivered":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4" />
+        return <XCircle className="h-4 w-4" />;
     }
-  }
+  };
 
   const getStatusBadge = (status: Order["status"]) => {
     const variants = {
@@ -241,20 +285,25 @@ export default function OrdersPage() {
       shipped: "bg-purple-100 text-purple-800 hover:bg-purple-200",
       delivered: "bg-green-100 text-green-800 hover:bg-green-200",
       cancelled: "bg-red-100 text-red-800 hover:bg-red-200",
-    }
+    };
 
     return (
-      <Badge variant="outline" className={`flex items-center gap-1 font-normal ${variants[status]}`}>
+      <Badge
+        variant="outline"
+        className={`flex items-center gap-1 font-normal ${variants[status]}`}
+      >
         {getStatusIcon(status)}
         <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
       </Badge>
-    )
-  }
+    );
+  };
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Orders</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
+          Orders
+        </h1>
       </div>
 
       {/* Filters */}
@@ -301,43 +350,78 @@ export default function OrdersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("id")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("id")}
+                >
                   <div className="flex items-center">
                     Order ID
                     {sortField === "id" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("customer_name")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("customer_name")}
+                >
                   <div className="flex items-center">
                     Customer
                     {sortField === "customer_name" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("created_at")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("created_at")}
+                >
                   <div className="flex items-center">
                     Date
                     {sortField === "created_at" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("total_amount")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("total_amount")}
+                >
                   <div className="flex items-center">
                     Total
                     {sortField === "total_amount" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("status")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("status")}
+                >
                   <div className="flex items-center">
                     Status
                     {sortField === "status" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
@@ -378,11 +462,18 @@ export default function OrdersPage() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{order.customer_name}</div>
-                        <div className="text-xs text-gray-500">{order.customer_email}</div>
+                        <div className="text-xs text-gray-500">
+                          {order.customer_email}
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>${order.total_amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {currencySymbol}
+                      {(order.total_amount * exchangeRate).toFixed(2)}
+                    </TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -394,7 +485,10 @@ export default function OrdersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/admin/orders/${order.id}`} className="flex items-center cursor-pointer">
+                            <Link
+                              href={`/admin/orders/${order.id}`}
+                              className="flex items-center cursor-pointer"
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </Link>
@@ -415,7 +509,10 @@ export default function OrdersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-gray-500"
+                  >
                     No orders found. Try adjusting your search or filters.
                   </TableCell>
                 </TableRow>
@@ -431,27 +528,41 @@ export default function OrdersPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    onClick={() =>
+                      handlePageChange(Math.max(1, currentPage - 1))
+                    }
+                    className={
+                      currentPage === 1
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
                   />
                 </PaginationItem>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      isActive={page === currentPage}
-                      onClick={() => handlePageChange(page)}
-                      className="cursor-pointer"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        isActive={page === currentPage}
+                        onClick={() => handlePageChange(page)}
+                        className="cursor-pointer"
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
 
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    onClick={() =>
+                      handlePageChange(Math.min(totalPages, currentPage + 1))
+                    }
+                    className={
+                      currentPage === totalPages
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -460,5 +571,5 @@ export default function OrdersPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

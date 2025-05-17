@@ -49,7 +49,10 @@ const Navbar = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo + Mobile Menu Button */}
             <div className="flex items-center">
-              <Link href={isAdminPath ? "/admin" : "/"} className="flex-shrink-0">
+              <Link
+                href={isAdminPath ? "/admin" : "/"}
+                className="flex-shrink-0"
+              >
                 <Image
                   src="/Vendora.png"
                   alt="Vendora Logo"
@@ -86,35 +89,34 @@ const Navbar = () => {
             {/* Right Side Actions */}
             <div className="flex items-center space-x-1 md:space-x-4">
               {/* Currency Selector - Hidden in admin */}
-              {!isAdminPath && (
-                <div className="hidden md:block space-x-2">
-                  <div className="relative">
-                    <select
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
-                      className="appearance-none bg-transparent pl-8 pr-4 py-1 text-sm font-medium border border-gray-200 rounded-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
-                    >
-                      <option value="USD">$ USD&nbsp;</option>
-                      <option value="EUR">€ EUR&nbsp;</option>
-                      <option value="GBP">£ GBP&nbsp;</option>
-                      <option value="PHP">₱ PHP&nbsp;</option>
-                    </select>
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-sm">
-                      {currency === "USD" && (
-                        <span title="United States">🇺🇸</span>
-                      )}
-                      {currency === "EUR" && (
-                        <span title="European Union">🇪🇺</span>
-                      )}
-                      {currency === "GBP" && (
-                        <span title="United Kingdom">🇬🇧</span>
-                      )}
-                      {currency === "PHP" && <span title="Philippines">🇵🇭</span>}
-                    </div>
-                    <ChevronDown className="absolute ml-4 right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
+
+              <div className="hidden md:block space-x-2">
+                <div className="relative">
+                  <select
+                    value={currency}
+                    onChange={(e) => setCurrency(e.target.value)}
+                    className="appearance-none bg-transparent pl-8 pr-4 py-1 text-sm font-medium border border-gray-200 rounded-md hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer"
+                  >
+                    <option value="USD">$ USD&nbsp;</option>
+                    <option value="EUR">€ EUR&nbsp;</option>
+                    <option value="GBP">£ GBP&nbsp;</option>
+                    <option value="PHP">₱ PHP&nbsp;</option>
+                  </select>
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-sm">
+                    {currency === "USD" && (
+                      <span title="United States">🇺🇸</span>
+                    )}
+                    {currency === "EUR" && (
+                      <span title="European Union">🇪🇺</span>
+                    )}
+                    {currency === "GBP" && (
+                      <span title="United Kingdom">🇬🇧</span>
+                    )}
+                    {currency === "PHP" && <span title="Philippines">🇵🇭</span>}
                   </div>
+                  <ChevronDown className="absolute ml-4 right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-500 pointer-events-none" />
                 </div>
-              )}
+              </div>
 
               {/* Orders and Cart - Hidden in admin */}
               {!isAdminPath && (

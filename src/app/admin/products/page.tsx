@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -60,7 +60,10 @@ import {
 import { getProducts, deleteProduct, getCategory } from "@/lib/supabaseQueries";
 import { Product } from "@/models/Product";
 
+import { CurrencyContext } from "@/context/CurrencyContext";
+
 export default function ProductsPage() {
+  const { currency, exchangeRate } = useContext(CurrencyContext);
   const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
@@ -77,8 +80,26 @@ export default function ProductsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [currencySymbol, setCurrencySymbol] = useState("$");
 
   const itemsPerPage = 10;
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    // Update the currency in the context
+    switch (newCurrency) {
+      case "USD":
+        setCurrencySymbol("$");
+        break;
+      case "EUR":
+        setCurrencySymbol("€");
+        break;
+      case "PHP":
+        setCurrencySymbol("₱");
+        break;
+      default:
+        setCurrencySymbol("$");
+    }
+  };
 
   useEffect(() => {
     // Get query parameters
@@ -98,13 +119,19 @@ export default function ProductsPage() {
     fetchProducts(query, category, sort, direction as "asc" | "desc", page);
   }, [searchParams]);
 
+  useEffect(() => {
+    // Re-fetch products when currency or exchange rate changes
+    handleCurrencyChange(currency);
+    fetchProducts();
+  }, [currency, exchangeRate]);
+
   async function fetchProducts(
     query = searchQuery,
     category = categoryFilter,
     sort = sortField,
     direction = sortDirection,
     page = currentPage
-  )  {
+  ) {
     setLoading(true);
     try {
       // In a real app, you would pass these parameters to your API
@@ -112,7 +139,9 @@ export default function ProductsPage() {
 
       if (Array.isArray(data) && data.length > 0) {
         // Extract unique categories
-        const uniqueCategoryIds = [...new Set(data.map((item) => item.category_id))];
+        const uniqueCategoryIds = [
+          ...new Set(data.map((item) => item.category_id)),
+        ];
         const uniqueCategories = await Promise.all(
           uniqueCategoryIds.map(async (id) => {
             const category = await getCategory(id);
@@ -167,14 +196,14 @@ export default function ProductsPage() {
           startIndex + itemsPerPage
         );
 
-        // Convert to Product objects
+        // Convert to Product objects with updated prices based on exchange rate
         const productObjects = paginatedProducts.map(
           (prod) =>
             new Product(
               prod.id,
               prod.name,
               prod.description,
-              prod.price,
+              prod.price * exchangeRate,
               prod.stock_quantity,
               prod.category_id,
               prod.image_url,
@@ -430,7 +459,11 @@ export default function ProductsPage() {
                     <TableCell>
                       <div className="relative h-10 w-10 rounded overflow-hidden bg-gray-100">
                         <Image
-                          src={Array.isArray(product.image_url) ? product.image_url[0] : product.image_url}
+                          src={
+                            Array.isArray(product.image_url)
+                              ? product.image_url[0]
+                              : product.image_url
+                          }
                           alt={product.name}
                           fill
                           className="object-cover"
@@ -440,7 +473,9 @@ export default function ProductsPage() {
                     <TableCell className="font-medium">
                       {product.name}
                     </TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      {currencySymbol} {product.price.toFixed(2)}
+                    </TableCell>
                     <TableCell>{product.stock_quantity}</TableCell>
                     <TableCell>
                       {categories.find((c) => c.id === product.category_id)

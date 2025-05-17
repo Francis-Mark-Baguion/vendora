@@ -31,10 +31,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const hdrs = headers();
+  const hdrs = await headers();
 
-  const requestUrl = (await hdrs).get("url") || "";
+  const requestUrl = (hdrs).get("url") || "";
   const isAdminRoute = requestUrl.includes("/admin");
+  console.log("Request URL:", requestUrl);
+  console.log(isAdminRoute);
   return (
     <ClerkProvider>
       <CartProvider>
@@ -62,8 +64,7 @@ export default async function RootLayout({
                   />
                   {/* ✅ Wrap children inside a main container */}
                   <main className="min-h-screen flex flex-col">{children}</main>
-
-                  {isAdminRoute && <Footer />}
+                  {isAdminRoute ? null : <Footer />}
                 </body>
               </html>
             </ClientProvider>

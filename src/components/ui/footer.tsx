@@ -1,8 +1,21 @@
-'use client';
+"use client";
 
-import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedinIn,
+} from "react-icons/fa";
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.includes("/admin");
+
+  if (isAdminRoute) {
+    return null;
+  }
+
   return (
     <footer className="bg-black text-white py-10 px-5 md:px-20">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-5 gap-8">
@@ -24,7 +37,9 @@ const Footer = () => {
         {/* Support */}
         <div>
           <h2 className="text-lg font-semibold">Support</h2>
-          <p className="mt-2 text-gray-400 text-sm">Baybay City, Leyte, Philippines.</p>
+          <p className="mt-2 text-gray-400 text-sm">
+            Baybay City, Leyte, Philippines.
+          </p>
           <p className="text-gray-400 text-sm">Vendora@gmail.com</p>
           <p className="text-gray-400 text-sm">+88015-88888-9999</p>
         </div>
@@ -55,12 +70,18 @@ const Footer = () => {
         {/* Download App */}
         <div>
           <h2 className="text-lg font-semibold">Download App</h2>
-          <p className="text-gray-400 text-sm">Save $3 with App New User Only</p>
+          <p className="text-gray-400 text-sm">
+            Save $3 with App New User Only
+          </p>
           <div className="flex mt-2">
             <div className="w-16 h-16 bg-gray-700" />
             <div className="ml-3 flex flex-col space-y-2">
-              <button className="bg-gray-700 px-4 py-2 text-sm">Get it on Google Play</button>
-              <button className="bg-gray-700 px-4 py-2 text-sm">Download on the App Store</button>
+              <button className="bg-gray-700 px-4 py-2 text-sm">
+                Get it on Google Play
+              </button>
+              <button className="bg-gray-700 px-4 py-2 text-sm">
+                Download on the App Store
+              </button>
             </div>
           </div>
           {/* Social Icons */}
@@ -73,7 +94,9 @@ const Footer = () => {
         </div>
       </div>
       <hr className="border-gray-700 my-6" />
-      <p className="text-center text-gray-400 text-sm">&copy; Copyright Vendora 2025. All rights reserved</p>
+      <p className="text-center text-gray-400 text-sm">
+        &copy; Copyright Vendora 2025. All rights reserved
+      </p>
     </footer>
   );
 };

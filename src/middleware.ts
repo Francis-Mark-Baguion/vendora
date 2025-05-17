@@ -33,6 +33,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("url", req.url);
+  console.log("Request URL:", req.url);
 
   // Skip all checks for public routes for unauthenticated users
   if (isPublicRoute(req) && !userId) {
@@ -48,7 +49,9 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Check if user is admin
     const customer = await getCustomerByUserId(userId);
-    const isAdmin = customer?.email === "johnrhuell@gmail.com";
+    const isAdmin =
+      customer?.email === "johnrhuell@gmail.com" ||
+      customer?.email === "forage.thesis@gmail.com";
 
     if (!isAdmin) {
       const url = req.nextUrl.clone();
