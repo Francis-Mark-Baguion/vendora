@@ -41,6 +41,7 @@
     "react-hook-form": "^7.56.3",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
+    "react-select": "^5.10.1",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.0.2",
     "tw-animate-css": "^1.2.4",

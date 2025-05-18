@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ReactSelect from "react-select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategories, createProduct } from "@/lib/supabaseQueries";
@@ -350,38 +351,53 @@ export default function NewProductPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="available_colors"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Available Colors (comma separated)
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Red, Blue, Green" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {hasSize && (
                     <FormField
                       control={form.control}
-                      name="available_sizes"
+                      name="available_colors"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>
-                            Available Sizes (comma separated)
-                          </FormLabel>
+                          <FormLabel>Available Colors</FormLabel>
                           <FormControl>
-                            <Input placeholder="S, M, L, XL" {...field} />
+                            <ReactSelect
+                              isMulti
+                              options={[
+                                { value: "red", label: "Red" },
+                                { value: "blue", label: "Blue" },
+                                { value: "green", label: "Green" },
+                              ]}
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                  {hasSize && (
+                    <FormField
+                    control={form.control}
+                    name="available_sizes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Available Sizes</FormLabel>
+                        <FormControl>
+                          <ReactSelect
+                            isMulti
+                            options={[
+                              { value: "S", label: "Small" },
+                              { value: "M", label: "Medium" },
+                              { value: "L", label: "Large" },
+                              { value: "XL", label: "Xtra-Large" },
+                            ]}
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   )}
 
                   <FormField
