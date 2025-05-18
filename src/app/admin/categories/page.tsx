@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { getCategories, deleteCategory } from "@/lib/supabaseQueries"
+import { getCategories, deleteCategory, getProductsNumberByCategory } from "@/lib/supabaseQueries"
 
 interface Category {
   id: number
@@ -60,17 +60,19 @@ export default function CategoriesPage() {
     }
   }, [categories, searchQuery, sortField, sortDirection])
 
+
+
   async function fetchCategories() {
     setLoading(true)
     try {
       const data = await getCategories()
       if (Array.isArray(data) && data.length > 0) {
-        // In a real app, you would get product_count from the API
-        // Here we're adding a mock product count
-        const categoriesWithCount = data.map((cat) => ({
+        const categories = data.map( (cat) => ({
           ...cat,
-          product_count: Math.floor(Math.random() * 50), // Mock product count
+          product_count: 0, // initial value, will be updated later
         }))
+        const categoriesWithCount = await getAllProductsNumbers(categories)
+  
         setCategories(categoriesWithCount)
         setFilteredCategories(categoriesWithCount)
       }
@@ -79,6 +81,16 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function getAllProductsNumbers(categories: Category[]) {
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (cat) => ({
+        ...cat,
+        product_count: await getProductsNumberByCategory(cat.id),
+      })),
+    )
+    return categoriesWithCount
   }
 
   function filterAndSortCategories() {

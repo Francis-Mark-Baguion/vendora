@@ -468,6 +468,21 @@ export async function getProductsByCategory(categoryId) {
 
   return data;
 }
+
+export async function getProductsNumberByCategory(categoryId) {
+  const { data, error } = await supabase
+    .from("product")
+    .select("*")
+    .eq("category_id", categoryId);
+
+  if (error) {
+    console.error("Error fetching products by category:", error);
+    return 0;
+  }
+
+  return data.length; // Return the number of products in the category
+}
+
 export async function getAddressByCustomerId(customerId) {
   let { data, error } = await supabase
     .from("address")
