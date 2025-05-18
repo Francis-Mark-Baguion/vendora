@@ -927,3 +927,20 @@ export async function bulkUpdateStock(updates) {
   }
   return updates;
 }
+
+export async function updateOrderStatus(orderId, newStatus) {
+  const { data, error } = await supabase
+    .from("order")
+    .update({ status: newStatus })
+    .eq("id", orderId)
+    .select("*") // Optional: include if you want the updated order returned
+    .single(); // Optional: return a single object instead of array
+
+  if (error) {
+    console.error(`Error updating status for order ${orderId}:`, error.message);
+    return { success: false, error: error.message };
+  }
+
+  console.log(`Order ${orderId} status updated to ${newStatus}`);
+  return { success: true, order: data };
+}

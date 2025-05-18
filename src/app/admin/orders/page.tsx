@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import {
   Truck,
   Package,
   XCircle,
+  ChevronDown,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -51,9 +52,10 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getOrders } from "@/lib/supabaseQueries";
-
+import { getOrders, updateOrderStatus } from "@/lib/supabaseQueries";
+import { toast } from "sonner";
 import { CurrencyContext } from "@/context/CurrencyContext";
+
 interface Order {
   id: string;
   customer_name: string;
@@ -81,8 +83,8 @@ export default function OrdersPage() {
   const [currencySymbol, setCurrencySymbol] = useState("$");
 
   const itemsPerPage = 10;
+
   const handleCurrencyChange = (newCurrency: string) => {
-    // Update the currency in the context
     switch (newCurrency) {
       case "USD":
         setCurrencySymbol("$");
@@ -97,27 +99,26 @@ export default function OrdersPage() {
         setCurrencySymbol("$");
     }
   };
+
   useEffect(() => {
-    // Re-fetch products when currency or exchange rate changes
     handleCurrencyChange(currency);
     fetchOrders();
   }, [currency, exchangeRate]);
+
   useEffect(() => {
-    // Get query parameters
     const query = searchParams.get("q") || "";
     const status = searchParams.get("status") || "all";
     const sort = searchParams.get("sort") || "created_at";
     const direction = searchParams.get("direction") || "desc";
     const page = Number.parseInt(searchParams.get("page") || "1");
 
-    // Set state from URL parameters
     setSearchQuery(query);
     setStatusFilter(status);
     setSortField(sort);
     setSortDirection(direction as "asc" | "desc");
     setCurrentPage(page);
 
-    fetchOrders(query, status, sort, (direction as "asc") || "desc", page);
+    fetchOrders(query, status, sort, direction as "asc" | "desc", page);
   }, [searchParams]);
 
   async function fetchOrders(
@@ -129,11 +130,9 @@ export default function OrdersPage() {
   ) {
     setLoading(true);
     try {
-      // In a real app, you would pass these parameters to your API
       const data = await getOrders();
 
       if (Array.isArray(data) && data.length > 0) {
-        // Filter orders
         let filteredOrders = [...data];
 
         if (query) {
@@ -151,7 +150,6 @@ export default function OrdersPage() {
           );
         }
 
-        // Sort orders
         filteredOrders.sort((a, b) => {
           let aValue = a[sort as keyof typeof a];
           let bValue = b[sort as keyof typeof b];
@@ -174,7 +172,6 @@ export default function OrdersPage() {
           return 0;
         });
 
-        // Pagination
         const totalItems = filteredOrders.length;
         setTotalPages(Math.ceil(totalItems / itemsPerPage));
 
@@ -188,15 +185,33 @@ export default function OrdersPage() {
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
+      toast.error("Failed to load orders");
     } finally {
       setLoading(false);
     }
   }
 
+  const handleStatusUpdate = async (orderId: string, newStatus: Order["status"]) => {
+    try {
+      await updateOrderStatus(orderId, newStatus);
+      
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+      
+      toast.success(`Order #${orderId} status updated to ${newStatus}`);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      toast.error("Failed to update order status");
+    }
+  };
+
   const handleSearch = () => {
     updateUrlAndFetch({
       q: searchQuery,
-      page: "1", // Reset to first page on new search
+      page: "1",
     });
   };
 
@@ -204,7 +219,7 @@ export default function OrdersPage() {
     setStatusFilter(value);
     updateUrlAndFetch({
       status: value,
-      page: "1", // Reset to first page on filter change
+      page: "1",
     });
   };
 
@@ -229,7 +244,6 @@ export default function OrdersPage() {
   const updateUrlAndFetch = (params: Record<string, string>) => {
     const url = new URL(window.location.href);
 
-    // Update search params
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
         url.searchParams.set(key, value);
@@ -238,7 +252,6 @@ export default function OrdersPage() {
       }
     });
 
-    // Preserve existing params that aren't being updated
     if (!params.hasOwnProperty("q") && searchQuery) {
       url.searchParams.set("q", searchQuery);
     }
@@ -259,7 +272,6 @@ export default function OrdersPage() {
       url.searchParams.set("page", currentPage.toString());
     }
 
-    // Update URL without reloading the page
     router.push(url.pathname + url.search);
   };
 
@@ -278,7 +290,7 @@ export default function OrdersPage() {
     }
   };
 
-  const getStatusBadge = (status: Order["status"]) => {
+  const getStatusBadge = (order: Order) => {
     const variants = {
       pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
       processing: "bg-blue-100 text-blue-800 hover:bg-blue-200",
@@ -288,13 +300,58 @@ export default function OrdersPage() {
     };
 
     return (
-      <Badge
-        variant="outline"
-        className={`flex items-center gap-1 font-normal ${variants[status]}`}
-      >
-        {getStatusIcon(status)}
-        <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
-      </Badge>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="flex items-center">
+            <Badge
+              variant="outline"
+              className={`flex items-center gap-1 font-normal ${variants[order.status]} cursor-pointer`}
+            >
+              {getStatusIcon(order.status)}
+              <span>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span>
+              <ChevronDown className="h-3 w-3 ml-1" />
+            </Badge>
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem 
+            onClick={() => handleStatusUpdate(order.id, "pending")}
+            className="flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4 text-yellow-600" />
+            <span>Pending</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => handleStatusUpdate(order.id, "processing")}
+            className="flex items-center gap-2"
+          >
+            <Package className="h-4 w-4 text-blue-600" />
+            <span>Processing</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => handleStatusUpdate(order.id, "shipped")}
+            className="flex items-center gap-2"
+          >
+            <Truck className="h-4 w-4 text-purple-600" />
+            <span>Shipped</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => handleStatusUpdate(order.id, "delivered")}
+            className="flex items-center gap-2"
+          >
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span>Delivered</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={() => handleStatusUpdate(order.id, "cancelled")}
+            className="flex items-center gap-2"
+          >
+            <XCircle className="h-4 w-4 text-red-600" />
+            <span>Cancel</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     );
   };
 
@@ -306,7 +363,6 @@ export default function OrdersPage() {
         </h1>
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-4 rounded-lg border mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -344,7 +400,6 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table */}
       <div className="bg-white rounded-lg border overflow-hidden mb-4">
         <div className="overflow-x-auto">
           <Table>
@@ -430,11 +485,10 @@ export default function OrdersPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                // Loading skeleton
                 Array(5)
                   .fill(0)
                   .map((_, i) => (
-                    <TableRow key={i}>
+                     <TableRow key={`skeleton-${i}`}>
                       <TableCell>
                         <Skeleton className="h-4 w-24" />
                       </TableCell>
@@ -474,7 +528,7 @@ export default function OrdersPage() {
                       {currencySymbol}
                       {(order.total_amount * exchangeRate).toFixed(2)}
                     </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>{getStatusBadge(order)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -521,7 +575,6 @@ export default function OrdersPage() {
           </Table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="py-4 border-t">
             <Pagination>

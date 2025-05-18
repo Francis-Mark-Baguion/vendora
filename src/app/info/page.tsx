@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { createNewAddress, createNewCustomer } from "@/lib/supabaseQueries";
-
 import Image from "next/image";
+import { toast } from "sonner"; // or your preferred toast library
 
 export default function CustomerInfoPage() {
   const { user } = useUser();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -23,16 +24,77 @@ export default function CustomerInfoPage() {
       barangay: "",
       city: "",
       province: "",
-      country: "Philippines", // Default value
+      country: "Philippines",
       zipCode: "",
     },
   });
 
+  // Validate Philippine phone number (starts with 09, 11 digits)
+  const validatePhoneNumber = (phone: string): boolean => {
+    const regex = /^09\d{9}$/;
+    return regex.test(phone);
+  };
+
+  // Validate Philippine ZIP code (4 digits)
+  const validateZipCode = (zip: string): boolean => {
+    const regex = /^\d{4}$/;
+    return regex.test(zip);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Required field validation
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    
+    // Phone number validation
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!validatePhoneNumber(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Please enter a valid Philippine phone number (09XXXXXXXXX)";
+    }
+
+    // Address validation
+    if (!formData.address.barangay.trim()) newErrors["address.barangay"] = "Barangay is required";
+    if (!formData.address.city.trim()) newErrors["address.city"] = "City is required";
+    if (!formData.address.province.trim()) newErrors["address.province"] = "Province is required";
+    
+    // ZIP code validation
+    if (!formData.address.zipCode.trim()) {
+      newErrors["address.zipCode"] = "ZIP code is required";
+    } else if (!validateZipCode(formData.address.zipCode)) {
+      newErrors["address.zipCode"] = "Please enter a valid Philippine ZIP code (4 digits)";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Phone number formatting (auto-format to 09XXXXXXXXX)
+    if (name === "phoneNumber") {
+      const cleaned = value.replace(/\D/g, '').slice(0, 11);
+      const formatted = cleaned.startsWith('09') ? cleaned : '09' + cleaned.slice(2);
+      setFormData(prev => ({ ...prev, [name]: formatted }));
+      return;
+    }
+    
+    // ZIP code formatting (only allow numbers, max 4 digits)
+    if (name === "address.zipCode") {
+      const cleaned = value.replace(/\D/g, '').slice(0, 4);
+      setFormData(prev => ({
+        ...prev,
+        address: { ...prev.address, zipCode: cleaned }
+      }));
+      return;
+    }
+
     if (name.includes("address.")) {
       const addressField = name.split(".")[1];
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         address: {
           ...prev.address,
@@ -40,39 +102,48 @@ export default function CustomerInfoPage() {
         },
       }));
     } else {
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value,
       }));
+    }
+
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Add your submission logic here (e.g., API call to save customer info)
-      console.log("Submitting:", {
-        email: user?.primaryEmailAddress?.emailAddress,
-        ...formData,
-      });
-
-    const addressData = await createNewAddress(
-      formData.firstName,
-      formData.phoneNumber,
-      formData.address.landmark,
-      formData.address.barangay,
-      formData.address.city,
-      formData.address.province,
-      formData.address.country,
-      formData.address.zipCode
-    );
+      const addressData = await createNewAddress(
+        formData.firstName,
+        formData.phoneNumber,
+        formData.address.landmark,
+        formData.address.barangay,
+        formData.address.city,
+        formData.address.province,
+        formData.address.country,
+        formData.address.zipCode
+      );
+      
       if (!addressData) {
-        throw new Error("Failed to create customer data");
+        throw new Error("Failed to create address data");
       }
-      console.log("Customer data created:", addressData.id);
-    
+
       const customerData = await createNewCustomer(
         formData.firstName,
         formData.lastName,
@@ -81,17 +152,24 @@ export default function CustomerInfoPage() {
         addressData.id,
         user?.id
       );
+      
       if (!customerData) {
         throw new Error("Failed to create customer data");
       }
-      console.log("Customer data created:", customerData.id);
-      // Redirect  after successful submission
-      window.location.href = "/";
+
+      toast.success("Profile completed successfully!");
+      router.push("/");
     } catch (error) {
       console.error("Submission error:", error);
+      toast.error("Failed to save information. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Helper function to get error message
+  const getError = (fieldName: string): string | undefined => {
+    return errors[fieldName] || errors[`address.${fieldName}`];
   };
 
   return (
@@ -99,13 +177,13 @@ export default function CustomerInfoPage() {
       <div className="max-w-7xl w-full md:w-1/2 mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8">
         <div className="text-center mb-8">
           <Image
-                          src="/Vendora.png"
-                          alt="Vendora Logo"
-                          width={140}
-                          height={60}
+            src="/Vendora.png"
+            alt="Vendora Logo"
+            width={140}
+            height={60}
             priority
             className="mx-auto mb-4"
-                        />
+          />
           <h1 className="text-2xl font-bold text-gray-900">
             Complete Your Profile
           </h1>
@@ -132,6 +210,9 @@ export default function CustomerInfoPage() {
                 onChange={handleChange}
                 className="mt-1"
               />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+              )}
             </div>
             <div>
               <label
@@ -149,6 +230,9 @@ export default function CustomerInfoPage() {
                 onChange={handleChange}
                 className="mt-1"
               />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -166,8 +250,12 @@ export default function CustomerInfoPage() {
               required
               value={formData.phoneNumber}
               onChange={handleChange}
+              placeholder="09XXXXXXXXX"
               className="mt-1"
             />
+            {errors.phoneNumber && (
+              <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -208,6 +296,9 @@ export default function CustomerInfoPage() {
                 onChange={handleChange}
                 className="mt-1"
               />
+              {errors["address.barangay"] && (
+                <p className="mt-1 text-sm text-red-600">{errors["address.barangay"]}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,6 +318,9 @@ export default function CustomerInfoPage() {
                   onChange={handleChange}
                   className="mt-1"
                 />
+                {errors["address.city"] && (
+                  <p className="mt-1 text-sm text-red-600">{errors["address.city"]}</p>
+                )}
               </div>
               <div>
                 <label
@@ -244,6 +338,9 @@ export default function CustomerInfoPage() {
                   onChange={handleChange}
                   className="mt-1"
                 />
+                {errors["address.province"] && (
+                  <p className="mt-1 text-sm text-red-600">{errors["address.province"]}</p>
+                )}
               </div>
             </div>
 
@@ -263,6 +360,7 @@ export default function CustomerInfoPage() {
                   value={formData.address.country}
                   onChange={handleChange}
                   className="mt-1"
+                  disabled
                 />
               </div>
               <div>
@@ -279,8 +377,12 @@ export default function CustomerInfoPage() {
                   required
                   value={formData.address.zipCode}
                   onChange={handleChange}
+                  placeholder="e.g. 1600"
                   className="mt-1"
                 />
+                {errors["address.zipCode"] && (
+                  <p className="mt-1 text-sm text-red-600">{errors["address.zipCode"]}</p>
+                )}
               </div>
             </div>
           </div>
