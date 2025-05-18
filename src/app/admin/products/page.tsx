@@ -147,7 +147,7 @@ export default function ProductsPage() {
             const category = await getCategory(id);
             return {
               id: id,
-              name: category?.category_name || `Category ${id}`,
+              name: category?.name || `Category ${id}`,
             };
           })
         );
@@ -353,7 +353,7 @@ export default function ProductsPage() {
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
+                     {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
