@@ -672,7 +672,7 @@ export async function getRecentOrders(limit = 5) {
 
 // Admin Products Queries
 export async function deleteProduct(id) {
-  const { error } = await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabase.from("product").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting product:", error);
