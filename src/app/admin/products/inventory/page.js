@@ -50,6 +50,7 @@ import {
   getProducts,
   updateProductStock,
   bulkUpdateStock,
+  getCategory,
 } from "@/lib/supabaseQueries";
 
 import { CurrencyContext } from "@/context/CurrencyContext";
@@ -151,15 +152,18 @@ export default function InventoryPage() {
 
       if (Array.isArray(data) && data.length > 0) {
         // Extract unique categories
-        const uniqueCategories = [
+        const uniqueCategoryIds = [
           ...new Set(data.map((item) => item.category_id)),
-        ].map((id) => {
-          const product = data.find((p) => p.category_id === id);
-          return {
-            id: id,
-            name: product?.category_name || `Category ${id}`,
-          };
-        });
+        ];
+        const uniqueCategories = await Promise.all(
+          uniqueCategoryIds.map(async (id) => {
+            const category = await getCategory(id);
+            return {
+              id: id,
+              name: category?.name || `Category ${id}`,
+            };
+          })
+        );
 
         setCategories(uniqueCategories);
 
@@ -903,8 +907,9 @@ export default function InventoryPage() {
                         <div className="relative h-10 w-10 rounded overflow-hidden bg-gray-100">
                           <Image
                             src={
-                              product.image_url ||
-                              "/placeholder.svg?height=40&width=40"
+                              Array.isArray(product.image_url)
+                                ? product.image_url[0]
+                                : product.image_url
                             }
                             alt={product.name}
                             fill

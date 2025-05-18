@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -27,11 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ReactSelect from "react-select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategories, createProduct } from "@/lib/supabaseQueries";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+
+import { CurrencyContext } from "@/context/CurrencyContext";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -43,12 +46,14 @@ const productSchema = z.object({
   stock_quantity: z.coerce.number().int().nonnegative({ message: "Stock quantity must be a non-negative integer." }),
   category_id: z.string().min(1, { message: "Please select a category." }),
   is_featured: z.boolean().default(false),
-  available_colors: z.string().optional(),
-  available_sizes: z.string().optional(),
+  available_colors: z.array(z.string()).optional(),
+  available_sizes: z.array(z.string()).optional(),
 });
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { currency, exchangeRate } = useContext(CurrencyContext);
+  const [currencySymbol, setCurrencySymbol] = useState("$");
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -66,10 +71,27 @@ export default function NewProductPage() {
       stock_quantity: 1,
       category_id: "",
       is_featured: false,
-      available_colors: "",
-      available_sizes: "",
+      available_colors: [],
+      available_sizes: [],
     },
   });
+
+  const handleCurrencyChange = (newCurrency) => {
+    // Update the currency in the context
+    switch (newCurrency) {
+      case "USD":
+        setCurrencySymbol("$");
+        break;
+      case "EUR":
+        setCurrencySymbol("€");
+        break;
+      case "PHP":
+        setCurrencySymbol("₱");
+        break;
+      default:
+        setCurrencySymbol("$");
+    }
+  };
 
   useEffect(() => {
     async function fetchCategories() {
@@ -92,6 +114,10 @@ export default function NewProductPage() {
 
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    handleCurrencyChange(currency);
+  }, [currency, exchangeRate]);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -163,25 +189,23 @@ export default function NewProductPage() {
         imageUrl = await uploadImage(imageFile);
         setUploadProgress(100);
       }
+      let initPrice = data.price;
+      if (currencySymbol !== "$") {
+        initPrice = (data.price / exchangeRate).toFixed(2);
+      }
 
       const productData = {
         name: data.name,
         description: data.description,
-        price: data.price,
+        price: initPrice,
         stock_quantity: data.stock_quantity,
         category_id: data.category_id,
         is_featured: data.is_featured,
         image_url: [imageUrl],
         available_colors:
-          data.available_colors
-            ?.split(",")
-            .map((c) => c.trim())
-            .filter(Boolean) || [],
+          data.available_colors,
         available_sizes:
-          data.available_sizes
-            ?.split(",")
-            .map((s) => s.trim())
-            .filter(Boolean) || [],
+          data.available_sizes,
       };
 
       await createProduct(productData);
@@ -266,7 +290,7 @@ export default function NewProductPage() {
                       name="price"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Price ($)</FormLabel>
+                          <FormLabel>Price ({currencySymbol})</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -350,38 +374,67 @@ export default function NewProductPage() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="available_colors"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Available Colors (comma separated)
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Red, Blue, Green" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {hasSize && (
                     <FormField
                       control={form.control}
-                      name="available_sizes"
+                      name="available_colors"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>
-                            Available Sizes (comma separated)
-                          </FormLabel>
+                          <FormLabel>Available Colors</FormLabel>
                           <FormControl>
-                            <Input placeholder="S, M, L, XL" {...field} />
+                            <ReactSelect
+                              isMulti
+                              options={[
+                                { value: "red", label: "Red" },
+                                { value: "blue", label: "Blue" },
+                                { value: "green", label: "Green" },
+                              ]}
+                              value={
+                                field.value?.map((val) => ({
+                                  value: val,
+                                  label: val.charAt(0).toUpperCase() + val.slice(1),
+                                })) || []
+                              }
+                              onChange={(selected) =>
+                                field.onChange(selected.map((opt) => opt.value))
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                  {hasSize && (
+                    <FormField
+                    control={form.control}
+                    name="available_sizes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Available Sizes</FormLabel>
+                        <FormControl>
+                          <ReactSelect
+                            isMulti
+                            options={[
+                              { value: "S", label: "Small" },
+                              { value: "M", label: "Medium" },
+                              { value: "L", label: "Large" },
+                              { value: "XL", label: "Xtra-Large" },
+                            ]}
+                            value={
+                              field.value?.map((val) => ({
+                                value: val,
+                                label: val.charAt(0).toUpperCase() + val.slice(1),
+                              })) || []
+                            }
+                            onChange={(selected) =>
+                              field.onChange(selected.map((opt) => opt.value))
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   )}
 
                   <FormField
