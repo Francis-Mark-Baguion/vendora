@@ -18,7 +18,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-black text-white py-10 px-5 md:px-20">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-5 gap-8">
+      <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Exclusive */}
         <div>
           <h2 className="text-lg font-semibold">Exclusive</h2>
@@ -48,11 +48,11 @@ const Footer = () => {
         <div>
           <h2 className="text-lg font-semibold">Account</h2>
           <ul className="mt-2 text-gray-400 text-sm space-y-1">
-            <li>My Account</li>
-            <li>Login / Register</li>
-            <li>Cart</li>
-            <li>Wishlist</li>
-            <li>Shop</li>
+            <li><a href="#">My Account</a></li>
+            <li><a href="#">Login / Register</a></li>
+            <li><a href="#">Cart</a></li>
+            <li><a href="#">Wishlist</a></li>
+            <li><a href="#">Shop</a></li>
           </ul>
         </div>
 
@@ -60,39 +60,22 @@ const Footer = () => {
         <div>
           <h2 className="text-lg font-semibold">Quick Link</h2>
           <ul className="mt-2 text-gray-400 text-sm space-y-1">
-            <li>Privacy Policy</li>
-            <li>Terms Of Use</li>
-            <li>FAQ</li>
-            <li>Contact</li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms Of Use</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Contact</a></li>
           </ul>
         </div>
-
-        {/* Download App */}
-        <div>
-          <h2 className="text-lg font-semibold">Download App</h2>
-          <p className="text-gray-400 text-sm">
-            Save $3 with App New User Only
-          </p>
-          <div className="flex mt-2">
-            <div className="w-16 h-16 bg-gray-700" />
-            <div className="ml-3 flex flex-col space-y-2">
-              <button className="bg-gray-700 px-4 py-2 text-sm">
-                Get it on Google Play
-              </button>
-              <button className="bg-gray-700 px-4 py-2 text-sm">
-                Download on the App Store
-              </button>
-            </div>
-          </div>
-          {/* Social Icons */}
-          <div className="flex space-x-4 mt-4 text-gray-400">
-            <FaFacebookF />
-            <FaTwitter />
-            <FaInstagram />
-            <FaLinkedinIn />
-          </div>
-        </div>
       </div>
+
+      {/* Social Icons */}
+      <div className="flex justify-center space-x-6 mt-8 text-gray-400 text-2xl">
+        <FaFacebookF />
+        <FaTwitter />
+        <FaInstagram />
+        <FaLinkedinIn />
+      </div>
+
       <hr className="border-gray-700 my-6" />
       <p className="text-center text-gray-400 text-sm">
         &copy; Copyright Vendora 2025. All rights reserved
