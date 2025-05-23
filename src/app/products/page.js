@@ -22,6 +22,7 @@ export default function ProductsPage() {
       try {
         setLoading(true);
         const productsData = await getProductsSearch(searchQuery);
+
         if (productsData) {
           setProducts(productsData);
           // Reset to first page when search changes

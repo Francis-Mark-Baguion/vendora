@@ -415,6 +415,29 @@ export async function getProducts() {
   return data; // Returns an array of product objects
 }
 
+export async function getFeaturedProducts(searchQuery) {
+  let { data, error } = await supabase
+    .from("product")
+    .select(
+      "id, name, description, price, stock_quantity, category_id, image_url, created_at, updated_at, rating, is_featured, available_colors, available_sizes"
+    )
+    .eq("is_featured", true); // Only get featured products // Fetch only necessary columns
+  console.log("Featured products:", data);
+  if (error) {
+    console.error("Error fetching products:", error);
+    return []; // Return an empty array if an error occurs
+  }
+
+  console.log("Fetched featured products:", data);
+  for (let i = 0; i < data.length; i++) {
+    if (!data[i].name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      data.splice(i, 1);
+      i--;
+    }
+  }
+  return data; // Returns an array of product objects
+}
+
 export async function getProductsSearch(searchQuery) {
   let { data, error } = await supabase
     .from("product")

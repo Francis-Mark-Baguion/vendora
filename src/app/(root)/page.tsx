@@ -10,7 +10,7 @@ import CategoryMenu from "@/components/ui/category-menu";
 import {
   getCarouselImages,
   getCategories,
-  getProducts,
+  getFeaturedProducts,
 } from "@/lib/supabaseQueries";
 import ProductCard from "@/components/ui/product_card";
 import { Product } from "@/models/Product";
@@ -28,7 +28,6 @@ export default function Home() {
   const router = useRouter();
   const { currency, exchangeRate } = useContext(CurrencyContext);
 
-
   async function fetchCategories() {
     const data = await getCategories();
     if (Array.isArray(data) && data.length > 0) {
@@ -42,24 +41,27 @@ export default function Home() {
   }
 
   async function fetchProducts() {
-    const data = await getProducts();
+    const data = await getFeaturedProducts();
+    console.log("Featureddddd Products:", data);
     if (Array.isArray(data) && data.length > 0) {
-      const productObjects = data.map(
-        (prod) =>
-          new Product(
-            prod.id,
-            prod.name,
-            prod.description,
-            prod.price * exchangeRate,
-            prod.stock_quantity,
-            prod.category_id,
-            prod.image_url,
-            new Date(prod.created_at),
-            new Date(prod.updated_at),
-            prod.rating,
-            prod.is_featured
-          )
-      );
+      const productObjects = data
+        .filter((prod) => prod.is_featured)
+        .map(
+          (prod) =>
+            new Product(
+              prod.id,
+              prod.name,
+              prod.description,
+              prod.price * exchangeRate,
+              prod.stock_quantity,
+              prod.category_id,
+              prod.image_url,
+              new Date(prod.created_at),
+              new Date(prod.updated_at),
+              prod.rating,
+              prod.is_featured
+            )
+        );
       setProducts(productObjects);
     }
   }

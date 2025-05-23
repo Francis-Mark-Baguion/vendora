@@ -29,6 +29,7 @@ import {
   FaLinkedinIn,
   FaTwitter,
 } from "react-icons/fa";
+import { Toaster } from "sonner";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -314,6 +315,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main content */}
       <div className="lg:pl-64">
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: "#fff",
+              color: "#000",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+              borderRadius: "8px",
+              padding: "16px",
+            },
+          }}
+        />
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8 mb-4">{children}</div>
         </main>
