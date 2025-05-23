@@ -505,7 +505,7 @@ export default function InventoryPage() {
       `SKU-${product.id}`,
       categories.find((c) => c.id === product.category_id)?.name ||
         `Category ${product.category_id}`,
-      product.price.toFixed(2),
+      Number(product.price.toFixed(2)).toLocaleString(),
       product.stock_quantity,
       product.stock_quantity === 0
         ? "Out of Stock"

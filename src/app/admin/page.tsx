@@ -250,17 +250,19 @@ export default function AdminDashboard() {
         <StatsCard
           title="Revenue"
           value={
-        loading
-          ? "..."
-          : `${currency} ${(orderStats.revenue * exchangeRate).toFixed(2)}`
+            loading
+              ? "..."
+              : `${currency} ${Number(
+                  (orderStats.revenue * exchangeRate).toFixed(2)
+                ).toLocaleString()}`
           }
           description="from previous period"
           icon={
-        currency === "USD" ? (
-          <DollarSign className="h-5 w-5" />
-        ) : (
-          <CreditCard className="h-5 w-5" />
-        )
+            currency === "USD" ? (
+              <DollarSign className="h-5 w-5" />
+            ) : (
+              <CreditCard className="h-5 w-5" />
+            )
           }
           trend={orderStats.trend}
           trendValue={orderStats.trendValue}
@@ -269,9 +271,9 @@ export default function AdminDashboard() {
         <StatsCard
           title="Products"
           value={
-        loading
-          ? "..."
-          : `${productStats.total} (${productStats.outOfStock} out of stock)`
+            loading
+              ? "..."
+              : `${productStats.total} (${productStats.outOfStock} out of stock)`
           }
           description="total products"
           icon={<ShoppingBag className="h-5 w-5" />}
@@ -280,9 +282,9 @@ export default function AdminDashboard() {
         <StatsCard
           title="Customers"
           value={
-        loading
-          ? "..."
-          : `${customerStats.total} (${customerStats.new} new)`
+            loading
+              ? "..."
+              : `${customerStats.total} (${customerStats.new} new)`
           }
           description="from previous period"
           icon={<Users className="h-5 w-5" />}
@@ -333,9 +335,9 @@ export default function AdminDashboard() {
                     id={order.id}
                     customer={order.customer_name || "Customer"}
                     date={new Date(order.created_at).toLocaleDateString()}
-                    amount={`${currency} ${(
-                      order.total_amount * exchangeRate
-                    ).toFixed(2)}`}
+                    amount={`${currency} ${Number(
+                      (order.total_amount * exchangeRate).toFixed(2)
+                    ).toLocaleString()}`}
                     status={order.status}
                   />
                 ))}

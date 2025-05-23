@@ -353,7 +353,7 @@ export default function ProductsPage() {
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
-                     {category.name}
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -474,7 +474,8 @@ export default function ProductsPage() {
                       {product.name}
                     </TableCell>
                     <TableCell>
-                      {currencySymbol} {product.price.toFixed(2)}
+                      {currencySymbol}{" "}
+                      {Number(product.price.toFixed(2)).toLocaleString()}
                     </TableCell>
                     <TableCell>{product.stock_quantity}</TableCell>
                     <TableCell>

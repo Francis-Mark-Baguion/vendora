@@ -413,7 +413,10 @@ export default function CustomersPage() {
                         {customer.orders_count}
                       </div>
                     </TableCell>
-                    <TableCell>${customer.total_spent.toFixed(2)}</TableCell>
+                    <TableCell>
+                      $
+                      {Number(customer.total_spent.toFixed(2)).toLocaleString()}
+                    </TableCell>
                     <TableCell>
                       {new Date(customer.created_at).toLocaleDateString()}
                     </TableCell>
