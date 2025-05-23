@@ -429,12 +429,7 @@ export async function getFeaturedProducts(searchQuery) {
   }
 
   console.log("Fetched featured products:", data);
-  for (let i = 0; i < data.length; i++) {
-    if (!data[i].name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      data.splice(i, 1);
-      i--;
-    }
-  }
+
   return data; // Returns an array of product objects
 }
 
@@ -613,12 +608,12 @@ export async function getOrderStats(timeframe = "week") {
 export async function getProductStats() {
   // Get total product count
   const { count } = await supabase
-    .from("products")
+    .from("product")
     .select("*", { count: "exact", head: true });
 
   // Get out of stock products
   const { count: outOfStockCount } = await supabase
-    .from("products")
+    .from("product")
     .select("*", { count: "exact", head: true })
     .lte("stock_quantity", 0);
 
@@ -641,12 +636,12 @@ export async function getCustomerStats(timeframe = "week") {
 
   // Get total customer count
   const { count } = await supabase
-    .from("customers")
+    .from("customer")
     .select("*", { count: "exact", head: true });
 
   // Get new customers in timeframe
   const { count: newCustomers } = await supabase
-    .from("customers")
+    .from("customer")
     .select("*", { count: "exact", head: true })
     .gte("created_at", fromDate.toISOString());
 
@@ -658,7 +653,7 @@ export async function getCustomerStats(timeframe = "week") {
   );
 
   const { count: prevNewCustomers } = await supabase
-    .from("customers")
+    .from("customer")
     .select("*", { count: "exact", head: true })
     .gte("created_at", prevFromDate.toISOString())
     .lte("created_at", fromDate.toISOString());
@@ -724,7 +719,7 @@ export async function deleteProduct(id) {
 export async function deleteCategory(id) {
   // First check if any products are using this category
   const { count } = await supabase
-    .from("products")
+    .from("product")
     .select("*", { count: "exact", head: true })
     .eq("category_id", id);
 
@@ -735,7 +730,7 @@ export async function deleteCategory(id) {
     };
   }
 
-  const { error } = await supabase.from("categories").delete().eq("id", id);
+  const { error } = await supabase.from("category").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting category:", error);

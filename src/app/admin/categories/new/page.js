@@ -24,6 +24,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { createCategory } from "@/lib/supabaseQueries";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/lib/supabaseClient";
 
 // Define the form schema with Zod
 const categorySchema = z.object({
@@ -76,7 +77,9 @@ export default function NewCategoryPage() {
 
     // Check file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Invalid file type. Please upload an image file (JPEG, PNG, etc.)");
+      toast.error(
+        "Invalid file type. Please upload an image file (JPEG, PNG, etc.)"
+      );
       return;
     }
 
@@ -102,6 +105,24 @@ export default function NewCategoryPage() {
     setUploadProgress(0);
   };
 
+  const uploadImage = async (file) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    const { error } = await supabase.storage
+      .from("product") // Make sure this matches your bucket name
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("product").getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   // Form submission handler
   const onSubmit = async (data) => {
     setSubmitting(true);
@@ -125,7 +146,7 @@ export default function NewCategoryPage() {
       // Create the category
       const categoryData = {
         ...data,
-        image_url: imageFile ? URL.createObjectURL(imageFile) : null,
+        image_url: await uploadImage(imageFile),
       };
 
       await createCategory(categoryData);
@@ -135,7 +156,7 @@ export default function NewCategoryPage() {
       // Redirect to categories list
       router.push("/admin/categories");
     } catch (error) {
-      console.error("Error creating category:", error);
+      console.log("Error creating category:", error);
       toast.error("Failed to create category. Please try again.");
     } finally {
       setSubmitting(false);
@@ -161,7 +182,10 @@ export default function NewCategoryPage() {
           <Card>
             <CardContent className="pt-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
                     name="name"
@@ -181,7 +205,8 @@ export default function NewCategoryPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          The name of your category as it will appear to customers.
+                          The name of your category as it will appear to
+                          customers.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -228,7 +253,8 @@ export default function NewCategoryPage() {
                           </div>
                         </FormControl>
                         <FormDescription>
-                          The URL-friendly version of the name. Used in the URL for the category page.
+                          The URL-friendly version of the name. Used in the URL
+                          for the category page.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -241,9 +267,12 @@ export default function NewCategoryPage() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-base">Product Size</FormLabel>
+                          <FormLabel className="text-base">
+                            Product Size
+                          </FormLabel>
                           <FormDescription>
-                            Enable if products in this category have sizes (S, M, L, XL).
+                            Enable if products in this category have sizes (S,
+                            M, L, XL).
                           </FormDescription>
                         </div>
                         <FormControl>

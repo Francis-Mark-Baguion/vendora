@@ -27,59 +27,61 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { getCategories, deleteCategory, getProductsNumberByCategory } from "@/lib/supabaseQueries"
+import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 interface Category {
-  id: number
-  name: string
-  description: string
-  link: string
-  image_url?: string
-  product_count: number
-  created_at: string
+  id: number;
+  name: string;
+  description: string;
+  link: string;
+  image_url?: string;
+  product_count: number;
+  created_at: string;
 }
 
 export default function CategoriesPage() {
-  const router = useRouter()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filteredCategories, setFilteredCategories] = useState<Category[]>([])
-  const [sortField, setSortField] = useState<keyof Category>("name")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
+  const [sortField, setSortField] = useState<keyof Category>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     if (categories.length > 0) {
-      filterAndSortCategories()
+      filterAndSortCategories();
     }
-  }, [categories, searchQuery, sortField, sortDirection])
-
-
+  }, [categories, searchQuery, sortField, sortDirection]);
 
   async function fetchCategories() {
-    setLoading(true)
+    setLoading(true);
     try {
-      const data = await getCategories()
+      const data = await getCategories();
       if (Array.isArray(data) && data.length > 0) {
-        const categories = data.map( (cat) => ({
+        const categories = data.map((cat) => ({
           ...cat,
           product_count: 0, // initial value, will be updated later
-        }))
-        const categoriesWithCount = await getAllProductsNumbers(categories)
-  
-        setCategories(categoriesWithCount)
-        setFilteredCategories(categoriesWithCount)
+        }));
+        const categoriesWithCount = await getAllProductsNumbers(categories);
+
+        setCategories(categoriesWithCount);
+        setFilteredCategories(categoriesWithCount);
       }
     } catch (error) {
-      console.error("Error fetching categories:", error)
+      console.error("Error fetching categories:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -88,76 +90,94 @@ export default function CategoriesPage() {
       categories.map(async (cat) => ({
         ...cat,
         product_count: await getProductsNumberByCategory(cat.id),
-      })),
-    )
-    return categoriesWithCount
+      }))
+    );
+    return categoriesWithCount;
   }
 
   function filterAndSortCategories() {
-    let result = [...categories]
+    let result = [...categories];
 
     // Apply search filter
     if (searchQuery) {
       result = result.filter(
         (category) =>
           category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          category.description.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+          category.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
 
     // Apply sorting
     result.sort((a, b) => {
-      const aValue = a[sortField]
-      const bValue = b[sortField]
+      const aValue = a[sortField];
+      const bValue = b[sortField];
 
       if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortDirection === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue)
+        return sortDirection === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
       }
 
       if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortDirection === "asc" ? aValue - bValue : bValue - aValue
+        return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
       }
 
-      return 0
-    })
+      return 0;
+    });
 
-    setFilteredCategories(result)
+    setFilteredCategories(result);
   }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }
+    setSearchQuery(e.target.value);
+  };
 
   const handleSort = (field: keyof Category) => {
-    setSortDirection(sortField === field && sortDirection === "asc" ? "desc" : "asc")
-    setSortField(field)
-  }
+    setSortDirection(
+      sortField === field && sortDirection === "asc" ? "desc" : "asc"
+    );
+    setSortField(field);
+  };
 
   const confirmDelete = (category: Category) => {
-    setCategoryToDelete(category)
-    setDeleteDialogOpen(true)
-  }
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
+  };
 
   const handleDelete = async () => {
-    if (!categoryToDelete) return
+    if (!categoryToDelete) return;
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      await deleteCategory(categoryToDelete.id)
-      setDeleteDialogOpen(false)
+      const { count } = await supabase
+        .from("product")
+        .select("*", { count: "exact", head: true })
+        .eq("category_id", categoryToDelete.id);
+      if (count && count > 0) {
+        toast.error(
+          "Cannot delete category with associated products. Please remove products first."
+        );
+
+        setDeleteDialogOpen(false);
+        return;
+      }
+      await deleteCategory(categoryToDelete.id);
+      setDeleteDialogOpen(false);
       // Refresh categories
-      fetchCategories()
+      fetchCategories();
     } catch (error) {
-      console.error("Error deleting category:", error)
+      console.error("Error deleting category:", error);
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Categories</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">
+          Categories
+        </h1>
         <Link href="/admin/categories/new">
           <Button className="flex items-center gap-1">
             <Plus className="h-4 w-4" />
@@ -187,28 +207,49 @@ export default function CategoriesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("name")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("name")}
+                >
                   <div className="flex items-center">
                     Name
                     {sortField === "name" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("product_count")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("product_count")}
+                >
                   <div className="flex items-center">
                     Products
                     {sortField === "product_count" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort("created_at")}>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("created_at")}
+                >
                   <div className="flex items-center">
                     Created
                     {sortField === "created_at" && (
-                      <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === "desc" ? "rotate-180" : ""}`} />
+                      <ArrowUpDown
+                        className={`ml-1 h-4 w-4 ${
+                          sortDirection === "desc" ? "rotate-180" : ""
+                        }`}
+                      />
                     )}
                   </div>
                 </TableHead>
@@ -250,7 +291,9 @@ export default function CategoriesPage() {
                         <Image
                           src={
                             category.image_url ||
-                            `/placeholder.svg?height=40&width=40&text=${encodeURIComponent(category.name[0])}`
+                            `/placeholder.svg?height=40&width=40&text=${encodeURIComponent(
+                              category.name[0]
+                            )}`
                           }
                           alt={category.name}
                           fill
@@ -258,15 +301,21 @@ export default function CategoriesPage() {
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{category.description || "No description"}</TableCell>
+                    <TableCell className="font-medium">
+                      {category.name}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {category.description || "No description"}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <ShoppingBag className="h-4 w-4 mr-1 text-gray-500" />
                         {category.product_count}
                       </div>
                     </TableCell>
-                    <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(category.created_at).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -277,7 +326,10 @@ export default function CategoriesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/category/${category.link}`} className="flex items-center cursor-pointer">
+                            <Link
+                              href={`/category/${category.link}`}
+                              className="flex items-center cursor-pointer"
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View
                             </Link>
@@ -306,7 +358,10 @@ export default function CategoriesPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-gray-500"
+                  >
                     No categories found. Try adjusting your search.
                   </TableCell>
                 </TableRow>
@@ -322,20 +377,28 @@ export default function CategoriesPage() {
           <DialogHeader>
             <DialogTitle>Delete Category</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{categoryToDelete?.name}"? This will also affect all products in this
-              category.
+              Are you sure you want to delete "{categoryToDelete?.name}"? This
+              will also affect all products in this category.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

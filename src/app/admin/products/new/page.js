@@ -260,12 +260,20 @@ export default function NewProductPage() {
     let imageUrl = null;
 
     try {
-      if (imageFile) {
-        setUploadProgress(30);
-        imageUrl = await uploadImage(imageFile);
-        setUploadProgress(100);
+      if (!imageFile) {
+        toast.error("Main image required", {
+          description: "Please upload a main product image.",
+        });
+        return;
       }
 
+      // Validate at least one additional image exists
+      if (additionalImages.length === 0) {
+        toast.error("Additional images required", {
+          description: "Please upload at least one additional product image.",
+        });
+        return;
+      }
       let initPrice = data.price;
       if (currencySymbol !== "$") {
         initPrice = (data.price / exchangeRate).toFixed(2);
