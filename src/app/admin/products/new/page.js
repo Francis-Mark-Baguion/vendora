@@ -279,6 +279,8 @@ export default function NewProductPage() {
         initPrice = (data.price / exchangeRate).toFixed(2);
       }
 
+      imageUrl = await uploadImage(imageFile);
+
       if (!imageUrl) {
         toast.error("Image uplaod failed", {
           description: "Please upload a valid image.",
