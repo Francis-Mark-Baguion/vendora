@@ -626,13 +626,18 @@ const CheckoutPage = () => {
                           <Label htmlFor="phone_number">Phone Number</Label>
                           <Input
                             id="phone_number"
+                            name="phone_number"
+                            type="tel"
+                            required
                             value={newAddress.phone_number}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewAddress({
                                 ...newAddress,
                                 phone_number: e.target.value,
-                              })
-                            }
+                              });
+                            }}
+                            placeholder="09XXXXXXXXX"
+                            className="mt-1"
                           />
                         </div>
                       </div>
