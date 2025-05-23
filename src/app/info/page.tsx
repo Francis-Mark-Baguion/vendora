@@ -120,7 +120,7 @@ export default function CustomerInfoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error("Please fix the errors in the form");
       return;
@@ -139,7 +139,7 @@ export default function CustomerInfoPage() {
         formData.address.country,
         formData.address.zipCode
       );
-      
+
       if (!addressData) {
         throw new Error("Failed to create address data");
       }
@@ -152,11 +152,11 @@ export default function CustomerInfoPage() {
         addressData.id,
         user?.id
       );
-      
+
       if (!customerData) {
         throw new Error("Failed to create customer data");
       }
-
+      console.log("Customer data:", customerData);
       toast.success("Profile completed successfully!");
       router.push("/");
     } catch (error) {
@@ -297,7 +297,9 @@ export default function CustomerInfoPage() {
                 className="mt-1"
               />
               {errors["address.barangay"] && (
-                <p className="mt-1 text-sm text-red-600">{errors["address.barangay"]}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors["address.barangay"]}
+                </p>
               )}
             </div>
 
@@ -319,7 +321,9 @@ export default function CustomerInfoPage() {
                   className="mt-1"
                 />
                 {errors["address.city"] && (
-                  <p className="mt-1 text-sm text-red-600">{errors["address.city"]}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors["address.city"]}
+                  </p>
                 )}
               </div>
               <div>
@@ -339,7 +343,9 @@ export default function CustomerInfoPage() {
                   className="mt-1"
                 />
                 {errors["address.province"] && (
-                  <p className="mt-1 text-sm text-red-600">{errors["address.province"]}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors["address.province"]}
+                  </p>
                 )}
               </div>
             </div>
@@ -381,7 +387,9 @@ export default function CustomerInfoPage() {
                   className="mt-1"
                 />
                 {errors["address.zipCode"] && (
-                  <p className="mt-1 text-sm text-red-600">{errors["address.zipCode"]}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors["address.zipCode"]}
+                  </p>
                 )}
               </div>
             </div>

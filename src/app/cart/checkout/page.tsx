@@ -623,7 +623,7 @@ const CheckoutPage = () => {
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="phone_number">Phone Number</Label>
+                          <Label htmlFor="phone_number">Phonse Number</Label>
                           <Input
                             id="phone_number"
                             name="phone_number"
@@ -631,13 +631,19 @@ const CheckoutPage = () => {
                             required
                             value={newAddress.phone_number}
                             onChange={(e) => {
+                              // Remove all non-numeric characters
+                              const numericValue = e.target.value.replace(
+                                /\D/g,
+                                ""
+                              );
                               setNewAddress({
                                 ...newAddress,
-                                phone_number: e.target.value,
+                                phone_number: numericValue,
                               });
                             }}
                             placeholder="09XXXXXXXXX"
                             className="mt-1"
+                            maxLength={10} // Optional: Limit to 10 digits (common for phone numbers)
                           />
                         </div>
                       </div>
